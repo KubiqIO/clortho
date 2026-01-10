@@ -1,0 +1,12 @@
+DROP TABLE IF EXISTS admin_logs;
+DROP TABLE IF EXISTS license_check_logs;
+DROP TABLE IF EXISTS subscriptions;
+DROP TABLE IF EXISTS license_releases;
+DROP TABLE IF EXISTS license_features;
+DROP TABLE IF EXISTS licenses;
+DROP TYPE IF EXISTS license_status;
+DROP TYPE IF EXISTS license_type;
+DROP TABLE IF EXISTS releases;
+DROP TABLE IF EXISTS features;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS product_groups;

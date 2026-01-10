@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://clortho:secret@db:5432/clortho?sslmode=disable
+      - PORT=8080
+    depends_on:
+      - db
+    restart: on-failure
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=clortho
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=clortho
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

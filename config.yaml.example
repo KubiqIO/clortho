@@ -1,0 +1,28 @@
+# Clortho Example Configuration
+# Copy this file to config.yaml and customize for your environment
+
+# Server port
+port: "8080"
+
+# PostgreSQL database connection string
+# Format: postgres://user:password@host:port/database
+database_url: postgres://user:password@localhost:5432/clortho
+
+# Secret key for signing admin JWT tokens
+# IMPORTANT: Generate a strong, random secret (minimum 32 characters)
+# Example: openssl rand -base64 32
+admin_secret: "CHANGE_ME_TO_A_SECURE_RANDOM_STRING"
+
+# Rate limiting configuration
+rate_limit:
+  # Number of requests allowed per second per IP
+  requests_per_second: 5
+  # Maximum burst size for rate limiting
+  burst: 10
+  # Enable or disable rate limiting
+  enabled: true
+
+# Ed25519 keys for signing API responses (optional)
+# Generate with: go run scripts/generate_keys.go
+# response_signing_private_key: "BASE64_ENCODED_ED25519_PRIVATE_KEY"
+# response_signing_public_key: "BASE64_ENCODED_ED25519_PUBLIC_KEY"
