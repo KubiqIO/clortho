@@ -1,5 +1,9 @@
 ![Clortho the Keymaster](https://cdn.clortho.com/img/banner.png)
 
+![build-badge]
+![latest-version-badge]
+[![Discord][discord-img]][discord-join]
+
 # Clortho
 
 Clortho is an API server for managing license keys and subscriptions. It handles license generation, validation, and offline verification.
@@ -443,3 +447,12 @@ List of log entries containing:
 - `actor`
 - `details` (JSON object with specific changes or request data)
 - `created_at`
+
+[discord-img]: https://img.shields.io/badge/discord-join-7289DA.svg?logo=discord&longCache=true&style=flat
+
+[discord-join]: https://discord.gg/heNhcnda8b
+
+[build-badge]: https://github.com/KubiqIO/clortho/actions/workflows/ci.yml/badge.svg?branch=main (https://github.com/KubiqIO/clortho/actions/workflows/ci.yml)
+
+[latest-version-badge]: https://img.shields.io/github/v/tag/kubiqio/clortho?label=version&logo=github
+
