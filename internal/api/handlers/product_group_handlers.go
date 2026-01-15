@@ -21,6 +21,8 @@ type createProductGroupRequest struct {
 	LicenseSeparator string `json:"license_separator"`
 	LicenseCharset   string `json:"license_charset"`
 	LicenseLength    int    `json:"license_length"`
+	AutoAllowedIP    bool   `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit int `json:"auto_allowed_ip_limit"`
 	OwnerID          *string `json:"owner_id"`
 }
 
@@ -31,6 +33,8 @@ type updateProductGroupRequest struct {
 	LicenseSeparator string `json:"license_separator"`
 	LicenseCharset   string `json:"license_charset"`
 	LicenseLength    *int   `json:"license_length"`
+	AutoAllowedIP    *bool  `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit *int `json:"auto_allowed_ip_limit"`
 	OwnerID          *string `json:"owner_id"`
 }
 
@@ -90,6 +94,8 @@ func CreateProductGroupHandler(productGroupStore store.ProductGroupStore, logSto
 			LicenseSeparator: req.LicenseSeparator,
 			LicenseCharset:   req.LicenseCharset,
 			LicenseLength:    req.LicenseLength,
+			AutoAllowedIP:    req.AutoAllowedIP,
+			AutoAllowedIPLimit: req.AutoAllowedIPLimit,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		}
@@ -164,6 +170,12 @@ func UpdateProductGroupHandler(productGroupStore store.ProductGroupStore, logSto
 		}
 		if req.LicenseLength != nil && *req.LicenseLength > 0 {
 			group.LicenseLength = *req.LicenseLength
+		}
+		if req.AutoAllowedIP != nil {
+			group.AutoAllowedIP = *req.AutoAllowedIP
+		}
+		if req.AutoAllowedIPLimit != nil {
+			group.AutoAllowedIPLimit = *req.AutoAllowedIPLimit
 		}
 
 		group.UpdatedAt = time.Now()

@@ -20,6 +20,7 @@ Clortho is an API server for managing license keys and subscriptions. It handles
 - **Secure**: JWT Authentication for management endpoints, bcrypt password hashing.
 - **Rate Limiting**: Protects against abuse with configurable IP-based rate limiting.
 - **IP Restrictions**: Restrict licenses to specific IP addresses or CIDR networks.
+- **Auto Allowed IPs**: Automatically add client IPs to the allowlist during validation up to a configurable limit.
 - **Response Signing**: Ed25519 signatures for resources (e.g. valid: true/false) for offline verification.
 - **Resource Ownership**: Optional `owner_id` field on all resources (Products, Licenses, etc.) to support multi-tenancy and filtering.
 
@@ -248,6 +249,13 @@ curl -H "X-License-Key: DEMO-aBc123..." "http://localhost:8080/check?feature=sso
 > - The `reason` field is only present when `valid` is `false`
 > - If a license has no release restrictions, all versions are allowed
 > - Features must be explicitly enabled on the license to pass validation
+>
+> **Auto Allowed IPs**:
+> If a license has `auto_allowed_ip` enabled and the current client IP is not in the allowed list:
+> 1. The server checks if the number of currently allowed IPs is less than `auto_allowed_ip_limit`.
+> 2. If below the limit, the IP is automatically added to the license's `allowed_ips` list.
+> 3. Validation proceeds as successful (assuming other checks pass).
+> 4. If the limit is reached, validation fails with "IP address not allowed".
 
 
 ### Admin Endpoints
@@ -292,7 +300,9 @@ curl -X POST http://localhost:8080/admin/keys \
     "feature_codes": ["sso", "premium"],
     "release_versions": ["1.0.0", "2.0.0"],
     "allowed_ips": ["192.168.1.10"],
-    "allowed_networks": ["10.0.0.0/24"]
+    "allowed_networks": ["10.0.0.0/24"],
+    "auto_allowed_ip": true,
+    "auto_allowed_ip_limit": 5
   }'
 ```
 
@@ -342,7 +352,7 @@ curl -X DELETE http://localhost:8080/admin/keys/purge \
 |--------|----------|-------------|------|
 | GET | `/admin/products` | List products | - |
 | GET | `/admin/products/:id` | Get product | - |
-| POST | `/admin/products` | Create product | `{"name": "...", "license_prefix": "PROD", "license_separator": "_", "license_length": 25, "license_charset": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", "product_group_id": "YOUR_PRODUCT_GROUP_UUID"}` |
+| POST | `/admin/products` | Create product | `{"name": "...", "license_prefix": "PROD", "license_separator": "_", "license_length": 25, "auto_allowed_ip": true, "auto_allowed_ip_limit": 5, "product_group_id": "YOUR_PRODUCT_GROUP_UUID"}` |
 | PUT | `/admin/products/:id` | Update product | Same as create |
 | DELETE | `/admin/products/:id` | Delete product | - |
 
@@ -352,7 +362,7 @@ curl -X DELETE http://localhost:8080/admin/keys/purge \
 |--------|----------|-------------|------|
 | GET | `/admin/product-groups` | List groups | - |
 | GET | `/admin/product-groups/:id` | Get group | - |
-| POST | `/admin/product-groups` | Create group | `{"name": "Suite", "license_prefix": "SUITE", "license_separator": "_", "license_length": 25, "license_charset": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"}` |
+| POST | `/admin/product-groups` | Create group | `{"name": "Suite", "license_prefix": "SUITE", "license_separator": "_", "license_length": 25, "auto_allowed_ip": true, "auto_allowed_ip_limit": 10}` |
 | PUT | `/admin/product-groups/:id` | Update group | Same as create |
 | DELETE | `/admin/product-groups/:id` | Delete group | - |
 
@@ -366,6 +376,8 @@ Products can belong to a Product Group via the `product_group_id` field. When a 
 | `license_separator` | Uses group's separator if product's is empty/default (`-`) |
 | `license_length` | Uses group's length if product's is empty |
 | `license_charset` | Uses group's charset if product's is empty |
+| `auto_allowed_ip` | Uses group's setting if product's is false (and group's is true) |
+| `auto_allowed_ip_limit` | Uses group's limit if product's is 0 |
 
 **Example**:
 1. Create a Product Group with `license_prefix: "SUITE"` and `license_separator: "_"`

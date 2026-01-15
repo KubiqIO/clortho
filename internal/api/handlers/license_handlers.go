@@ -100,7 +100,7 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 		}
 
 		// Check IP restrictions
-		if valid && (len(license.AllowedIPs) > 0 || len(license.AllowedNetworks) > 0) {
+		if valid && (len(license.AllowedIPs) > 0 || len(license.AllowedNetworks) > 0 || license.AutoAllowedIP) {
 			clientIPStr := c.ClientIP()
 			clientIP := net.ParseIP(clientIPStr)
 			if clientIP == nil {
@@ -135,6 +135,18 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 						if err == nil && subnet.Contains(clientIP) {
 							ipAllowed = true
 							break
+						}
+					}
+				}
+
+				if !ipAllowed && license.AutoAllowedIP {
+					if len(license.AllowedIPs) < license.AutoAllowedIPLimit {
+						license.AllowedIPs = append(license.AllowedIPs, clientIPStr)
+						if err := licenseStore.UpdateLicense(c.Request.Context(), license); err != nil {
+							slog.Error("Failed to auto-add IP to license", "error", err, "license_id", license.ID)
+						} else {
+							slog.Info("Auto-added IP to license", "license_id", license.ID, "ip", clientIPStr)
+							ipAllowed = true
 						}
 					}
 				}
@@ -249,6 +261,9 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 			length = product.LicenseLength
 		}
 
+		autoAllowedIP := product.AutoAllowedIP
+		autoAllowedIPLimit := product.AutoAllowedIPLimit
+
 		// If product belongs to a group, inherit missing settings
 		if product.ProductGroupID != nil {
 			group, err := productGroupStore.GetProductGroup(c.Request.Context(), product.ProductGroupID.String())
@@ -266,6 +281,12 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 				}
 				if length == 0 {
 					length = group.LicenseLength
+				}
+				if !autoAllowedIP {
+					autoAllowedIP = group.AutoAllowedIP
+				}
+				if autoAllowedIPLimit == 0 {
+					autoAllowedIPLimit = group.AutoAllowedIPLimit
 				}
 			}
 		}
@@ -305,6 +326,8 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 			AllowedIPs:      req.AllowedIPs,
 			AllowedNetworks: req.AllowedNetworks,
 			Status:          models.LicenseStatusActive,
+			AutoAllowedIP:     autoAllowedIP,
+			AutoAllowedIPLimit: autoAllowedIPLimit,
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 		}

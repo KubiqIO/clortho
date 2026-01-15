@@ -15,6 +15,8 @@ type ProductGroup struct {
 	LicenseSeparator  string    `json:"license_separator,omitempty"`
 	LicenseCharset    string    `json:"license_charset,omitempty"`
 	LicenseLength     int       `json:"license_length,omitempty"`
+	AutoAllowedIP     bool      `json:"auto_allowed_ip,omitempty"`
+	AutoAllowedIPLimit int      `json:"auto_allowed_ip_limit,omitempty"`
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
 }
@@ -30,6 +32,8 @@ type Product struct {
 	LicenseLength     int        `json:"license_length,omitempty"`
 	LicenseType       LicenseType `json:"license_type,omitempty"`
 	LicenseDuration   string     `json:"license_duration,omitempty"`
+	AutoAllowedIP     bool       `json:"auto_allowed_ip,omitempty"`
+	AutoAllowedIPLimit int       `json:"auto_allowed_ip_limit,omitempty"`
 	ProductGroupID    *uuid.UUID `json:"product_group_id,omitempty"`
 	CreatedAt         time.Time  `json:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at"`
@@ -82,6 +86,8 @@ type License struct {
 	AllowedIPs      []string      `json:"allowed_ips,omitempty"`
 	AllowedNetworks []string      `json:"allowed_networks,omitempty"`
 	ExpiresAt       *time.Time    `json:"expires_at,omitempty"`
+	AutoAllowedIP     bool          `json:"auto_allowed_ip,omitempty"`
+	AutoAllowedIPLimit int          `json:"auto_allowed_ip_limit,omitempty"`
 	Features        []string      `json:"features,omitempty"`
 	Releases        []string      `json:"releases,omitempty"`
 	Status          LicenseStatus `json:"status"`

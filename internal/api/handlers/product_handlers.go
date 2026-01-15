@@ -24,6 +24,8 @@ type createProductRequest struct {
 	LicenseType      models.LicenseType `json:"license_type"`
 	LicenseDuration  string `json:"license_duration"`
 	ProductGroupID   string `json:"product_group_id"`
+	AutoAllowedIP    bool   `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit int  `json:"auto_allowed_ip_limit"`
 	OwnerID          *string `json:"owner_id"`
 }
 
@@ -37,6 +39,8 @@ type updateProductRequest struct {
 	LicenseType      models.LicenseType `json:"license_type"`
 	LicenseDuration  string `json:"license_duration"`
 	ProductGroupID   string `json:"product_group_id"`
+	AutoAllowedIP    *bool  `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit *int `json:"auto_allowed_ip_limit"`
 	OwnerID          *string `json:"owner_id"`
 }
 
@@ -99,6 +103,8 @@ func CreateProductHandler(productStore store.ProductStore, logStore store.LogSto
 			LicenseLength:    req.LicenseLength,
 			LicenseType:      req.LicenseType,
 			LicenseDuration:  req.LicenseDuration,
+			AutoAllowedIP:    req.AutoAllowedIP,
+			AutoAllowedIPLimit: req.AutoAllowedIPLimit,
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 		}
@@ -199,6 +205,12 @@ func UpdateProductHandler(productStore store.ProductStore, logStore store.LogSto
 				return
 			}
 			product.ProductGroupID = &groupID
+		}
+		if req.AutoAllowedIP != nil {
+			product.AutoAllowedIP = *req.AutoAllowedIP
+		}
+		if req.AutoAllowedIPLimit != nil {
+			product.AutoAllowedIPLimit = *req.AutoAllowedIPLimit
 		}
 
 		product.UpdatedAt = time.Now()

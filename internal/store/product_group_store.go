@@ -27,7 +27,7 @@ func NewPostgresProductGroupStore(db *pgxpool.Pool) *PostgresProductGroupStore {
 
 func (s *PostgresProductGroupStore) ListProductGroups(ctx context.Context, ownerID *string, pagination models.PaginationParams) ([]models.ProductGroup, int, error) {
 	query := `
-		SELECT id, owner_id, name, COALESCE(description, ''), COALESCE(license_prefix, ''), COALESCE(license_separator, '-'), COALESCE(license_charset, ''), COALESCE(license_length, 0), created_at, updated_at
+		SELECT id, owner_id, name, COALESCE(description, ''), COALESCE(license_prefix, ''), COALESCE(license_separator, '-'), COALESCE(license_charset, ''), COALESCE(license_length, 0), auto_allowed_ip, auto_allowed_ip_limit, created_at, updated_at
 		FROM product_groups
 	`
 	countQuery := `SELECT count(*) FROM product_groups`
@@ -68,7 +68,7 @@ func (s *PostgresProductGroupStore) ListProductGroups(ctx context.Context, owner
 	var groups []models.ProductGroup
 	for rows.Next() {
 		var g models.ProductGroup
-		if err := rows.Scan(&g.ID, &g.OwnerID, &g.Name, &g.Description, &g.LicensePrefix, &g.LicenseSeparator, &g.LicenseCharset, &g.LicenseLength, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.OwnerID, &g.Name, &g.Description, &g.LicensePrefix, &g.LicenseSeparator, &g.LicenseCharset, &g.LicenseLength, &g.AutoAllowedIP, &g.AutoAllowedIPLimit, &g.CreatedAt, &g.UpdatedAt); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan product group: %w", err)
 		}
 		groups = append(groups, g)
@@ -83,10 +83,10 @@ func (s *PostgresProductGroupStore) ListProductGroups(ctx context.Context, owner
 
 func (s *PostgresProductGroupStore) CreateProductGroup(ctx context.Context, group *models.ProductGroup) error {
 	query := `
-		INSERT INTO product_groups (id, owner_id, name, description, license_prefix, license_separator, license_charset, license_length, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO product_groups (id, owner_id, name, description, license_prefix, license_separator, license_charset, license_length, auto_allowed_ip, auto_allowed_ip_limit, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
-	_, err := s.DB.Exec(ctx, query, group.ID, group.OwnerID, group.Name, group.Description, group.LicensePrefix, group.LicenseSeparator, group.LicenseCharset, group.LicenseLength, group.CreatedAt, group.UpdatedAt)
+	_, err := s.DB.Exec(ctx, query, group.ID, group.OwnerID, group.Name, group.Description, group.LicensePrefix, group.LicenseSeparator, group.LicenseCharset, group.LicenseLength, group.AutoAllowedIP, group.AutoAllowedIPLimit, group.CreatedAt, group.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create product group: %w", err)
 	}
@@ -95,12 +95,12 @@ func (s *PostgresProductGroupStore) CreateProductGroup(ctx context.Context, grou
 
 func (s *PostgresProductGroupStore) GetProductGroup(ctx context.Context, id string) (*models.ProductGroup, error) {
 	query := `
-		SELECT id, owner_id, name, COALESCE(description, ''), COALESCE(license_prefix, ''), COALESCE(license_separator, '-'), COALESCE(license_charset, ''), COALESCE(license_length, 0), created_at, updated_at
+		SELECT id, owner_id, name, COALESCE(description, ''), COALESCE(license_prefix, ''), COALESCE(license_separator, '-'), COALESCE(license_charset, ''), COALESCE(license_length, 0), auto_allowed_ip, auto_allowed_ip_limit, created_at, updated_at
 		FROM product_groups
 		WHERE id = $1
 	`
 	var g models.ProductGroup
-	err := s.DB.QueryRow(ctx, query, id).Scan(&g.ID, &g.OwnerID, &g.Name, &g.Description, &g.LicensePrefix, &g.LicenseSeparator, &g.LicenseCharset, &g.LicenseLength, &g.CreatedAt, &g.UpdatedAt)
+	err := s.DB.QueryRow(ctx, query, id).Scan(&g.ID, &g.OwnerID, &g.Name, &g.Description, &g.LicensePrefix, &g.LicenseSeparator, &g.LicenseCharset, &g.LicenseLength, &g.AutoAllowedIP, &g.AutoAllowedIPLimit, &g.CreatedAt, &g.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get product group: %w", err)
 	}
@@ -110,10 +110,10 @@ func (s *PostgresProductGroupStore) GetProductGroup(ctx context.Context, id stri
 func (s *PostgresProductGroupStore) UpdateProductGroup(ctx context.Context, group *models.ProductGroup) error {
 	query := `
 		UPDATE product_groups
-		SET name = $1, description = $2, license_prefix = $3, license_separator = $4, license_charset = $5, license_length = $6, updated_at = $7
-		WHERE id = $8
+		SET name = $1, description = $2, license_prefix = $3, license_separator = $4, license_charset = $5, license_length = $6, auto_allowed_ip = $7, auto_allowed_ip_limit = $8, updated_at = $9
+		WHERE id = $10
 	`
-	tag, err := s.DB.Exec(ctx, query, group.Name, group.Description, group.LicensePrefix, group.LicenseSeparator, group.LicenseCharset, group.LicenseLength, group.UpdatedAt, group.ID)
+	tag, err := s.DB.Exec(ctx, query, group.Name, group.Description, group.LicensePrefix, group.LicenseSeparator, group.LicenseCharset, group.LicenseLength, group.AutoAllowedIP, group.AutoAllowedIPLimit, group.UpdatedAt, group.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update product group: %w", err)
 	}
