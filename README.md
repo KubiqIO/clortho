@@ -348,10 +348,10 @@ curl -X DELETE http://localhost:8080/admin/keys/purge \
 
 #### Product Management
 
-| Method | Endpoint | Description | Body |
-|--------|----------|-------------|------|
+| Method | Endpoint | Description | Body / Query |
+|--------|----------|-------------|--------------|
 | GET | `/admin/products` | List products | - |
-| GET | `/admin/products/:id` | Get product | - |
+| GET | `/admin/products/:id` | Get product | Optional: `?include=group` |
 | POST | `/admin/products` | Create product | `{"name": "...", "license_prefix": "PROD", "license_separator": "_", "license_length": 25, "auto_allowed_ip": true, "auto_allowed_ip_limit": 5, "product_group_id": "YOUR_PRODUCT_GROUP_UUID"}` |
 | PUT | `/admin/products/:id` | Update product | Same as create |
 | DELETE | `/admin/products/:id` | Delete product | - |

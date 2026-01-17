@@ -80,7 +80,7 @@ func (s *Server) setupRoutes() {
 		// Product Management
 		authorized.GET("/admin/products", handlers.ListProductsHandler(s.ProductStore))
 		authorized.POST("/admin/products", handlers.CreateProductHandler(s.ProductStore, s.LogStore))
-		authorized.GET("/admin/products/:id", handlers.GetProductHandler(s.ProductStore))
+		authorized.GET("/admin/products/:id", handlers.GetProductHandler(s.ProductStore, s.ProductGroupStore))
 		authorized.PUT("/admin/products/:id", handlers.UpdateProductHandler(s.ProductStore, s.LogStore))
 		authorized.DELETE("/admin/products/:id", handlers.DeleteProductHandler(s.ProductStore, s.LogStore))
 

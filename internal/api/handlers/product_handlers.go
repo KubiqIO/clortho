@@ -146,7 +146,7 @@ func CreateProductHandler(productStore store.ProductStore, logStore store.LogSto
 }
 
 // GetProductHandler handles GET /admin/products/:id
-func GetProductHandler(productStore store.ProductStore) gin.HandlerFunc {
+func GetProductHandler(productStore store.ProductStore, groupStore store.ProductGroupStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 		product, err := productStore.GetProduct(c.Request.Context(), id)
@@ -154,6 +154,39 @@ func GetProductHandler(productStore store.ProductStore) gin.HandlerFunc {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
 			return
 		}
+
+		if c.Query("include") == "group" {
+			var group *models.ProductGroup
+			if product.ProductGroupID != nil {
+				g, err := groupStore.GetProductGroup(c.Request.Context(), product.ProductGroupID.String())
+				if err == nil {
+					group = g
+				} else {
+					slog.Warn("Failed to fetch product group for product", "product_id", id, "group_id", product.ProductGroupID, "error", err)
+				}
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"id":                    product.ID,
+				"owner_id":              product.OwnerID,
+				"name":                  product.Name,
+				"description":           product.Description,
+				"license_prefix":        product.LicensePrefix,
+				"license_separator":     product.LicenseSeparator,
+				"license_charset":       product.LicenseCharset,
+				"license_length":        product.LicenseLength,
+				"license_type":          product.LicenseType,
+				"license_duration":      product.LicenseDuration,
+				"auto_allowed_ip":       product.AutoAllowedIP,
+				"auto_allowed_ip_limit": product.AutoAllowedIPLimit,
+				"product_group_id":      product.ProductGroupID,
+				"created_at":            product.CreatedAt,
+				"updated_at":            product.UpdatedAt,
+				"group":                 group,
+			})
+			return
+		}
+
 		c.JSON(http.StatusOK, product)
 	}
 }

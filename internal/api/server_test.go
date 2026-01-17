@@ -603,11 +603,12 @@ func TestProductCRUDHandlers(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockProductStore := new(MockProductStore)
 	mockLogStore := new(MockLogStore)
+	mockProductGroupStore := new(MockProductGroupStore) // Added mock
 	mockLogStore.On("CreateAdminLog", mock.Anything, mock.Anything).Return(nil).Maybe()
 
 	router := gin.New()
 	router.POST("/admin/products", handlers.CreateProductHandler(mockProductStore, mockLogStore))
-	router.GET("/admin/products/:id", handlers.GetProductHandler(mockProductStore))
+	router.GET("/admin/products/:id", handlers.GetProductHandler(mockProductStore, mockProductGroupStore)) // Updated handler
 	router.PUT("/admin/products/:id", handlers.UpdateProductHandler(mockProductStore, mockLogStore))
 	router.DELETE("/admin/products/:id", handlers.DeleteProductHandler(mockProductStore, mockLogStore))
 
@@ -625,6 +626,41 @@ func TestProductCRUDHandlers(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockProductStore.AssertExpectations(t)
+	})
+
+	t.Run("GetProduct_WithGroup_Success", func(t *testing.T) {
+		id := uuid.New().String()
+		groupID := uuid.New()
+		product := &models.Product{
+			ID:             uuid.MustParse(id),
+			Name:           "Product With Group",
+			ProductGroupID: &groupID,
+		}
+		
+		group := &models.ProductGroup{
+			ID:   groupID,
+			Name: "Test Group",
+		}
+
+		mockProductStore.On("GetProduct", mock.Anything, id).Return(product, nil)
+		mockProductGroupStore.On("GetProductGroup", mock.Anything, groupID.String()).Return(group, nil)
+
+		req, _ := http.NewRequest("GET", "/admin/products/"+id+"?include=group", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		
+		var resp map[string]interface{}
+		err := json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.NoError(t, err)
+		assert.Equal(t, id, resp["id"])
+		assert.NotNil(t, resp["group"])
+		groupMap := resp["group"].(map[string]interface{})
+		assert.Equal(t, groupID.String(), groupMap["id"])
+		
+		mockProductStore.AssertExpectations(t)
+		mockProductGroupStore.AssertExpectations(t)
 	})
 
 	t.Run("UpdateProduct_Success", func(t *testing.T) {
