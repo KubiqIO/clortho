@@ -30,6 +30,8 @@ type generateLicenseRequest struct {
 	AllowedIPs      []string           `json:"allowed_ips"`
 	AllowedNetworks []string           `json:"allowed_networks"`
 	OwnerID         *string            `json:"owner_id"`
+	AutoAllowedIP     *bool              `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit *int              `json:"auto_allowed_ip_limit"`
 }
 
 type updateLicenseRequest struct {
@@ -44,6 +46,8 @@ type updateLicenseRequest struct {
 	AllowedNetworks []string           `json:"allowed_networks"`
 	Status          models.LicenseStatus `json:"status"`
 	OwnerID         *string              `json:"owner_id"`
+	AutoAllowedIP     *bool              `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit *int              `json:"auto_allowed_ip_limit"`
 }
 
 // CheckLicenseHandler handles GET /check
@@ -263,7 +267,7 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 
 		autoAllowedIP := product.AutoAllowedIP
 		autoAllowedIPLimit := product.AutoAllowedIPLimit
-
+	
 		// If product belongs to a group, inherit missing settings
 		if product.ProductGroupID != nil {
 			group, err := productGroupStore.GetProductGroup(c.Request.Context(), product.ProductGroupID.String())
@@ -289,6 +293,14 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 					autoAllowedIPLimit = group.AutoAllowedIPLimit
 				}
 			}
+		}
+
+		// Override with Request values
+		if req.AutoAllowedIP != nil {
+			autoAllowedIP = *req.AutoAllowedIP
+		}
+		if req.AutoAllowedIPLimit != nil {
+			autoAllowedIPLimit = *req.AutoAllowedIPLimit
 		}
 
 		if length <= 0 {
@@ -514,7 +526,14 @@ func UpdateLicenseHandler(licenseStore store.LicenseStore, logStore store.LogSto
 			existing.Status = req.Status
 		}
 
-		// Set UpdatedAt locally to avoid re-fetch, as store now respects this field
+		if req.AutoAllowedIP != nil {
+			existing.AutoAllowedIP = *req.AutoAllowedIP
+		}
+
+		if req.AutoAllowedIPLimit != nil {
+			existing.AutoAllowedIPLimit = *req.AutoAllowedIPLimit
+		}
+
 		existing.UpdatedAt = time.Now()
 
 		if err := licenseStore.UpdateLicense(c.Request.Context(), existing); err != nil {

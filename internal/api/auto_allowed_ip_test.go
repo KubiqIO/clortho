@@ -141,6 +141,39 @@ func TestGenerateLicense_AutoIPInheritance(t *testing.T) {
 		mockProductStore.AssertExpectations(t)
 		mockLicenseStore.AssertExpectations(t)
 	})
+
+	t.Run("Request_Overrides_All", func(t *testing.T) {
+		productID := uuid.New()
+		
+		product := &models.Product{
+			ID:                 productID,
+			Name:               "Product Default",
+			AutoAllowedIP:      false,
+			AutoAllowedIPLimit: 0,
+		}
+
+		reqBody := map[string]interface{}{
+			"product_id":            productID.String(),
+			"type":                  "perpetual",
+			"auto_allowed_ip":       true,
+			"auto_allowed_ip_limit": 99,
+		}
+		body, _ := json.Marshal(reqBody)
+
+		mockProductStore.On("GetProduct", mock.Anything, productID.String()).Return(product, nil).Once()
+
+		mockLicenseStore.On("CreateLicense", mock.Anything, mock.MatchedBy(func(l *models.License) bool {
+			return l.AutoAllowedIP == true && l.AutoAllowedIPLimit == 99
+		})).Return(nil).Once()
+
+		req, _ := http.NewRequest("POST", "/admin/keys", bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+		mockProductStore.AssertExpectations(t)
+		mockLicenseStore.AssertExpectations(t)
+	})
 }
 
 func TestCheckLicense_AutoIPLogic(t *testing.T) {
@@ -278,6 +311,61 @@ func TestCheckLicense_AutoIPLogic(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.False(t, resp["valid"].(bool))
 		assert.Equal(t, "IP address not allowed", resp["reason"])
+		
+		mockLicenseStore.AssertExpectations(t)
+	})
+}
+
+func TestUpdateLicense_AutoAllowedIP(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockLicenseStore := new(MockLicenseStore)
+	mockLogStore := new(MockLogStore)
+
+	// Allow any log creation
+	mockLogStore.On("CreateAdminLog", mock.Anything, mock.Anything).Return(nil).Maybe()
+
+	router := gin.New()
+	router.PUT("/admin/keys", handlers.UpdateLicenseHandler(mockLicenseStore, mockLogStore))
+
+	t.Run("Update_AutoAllowedIP_Settings", func(t *testing.T) {
+		key := "TEST-UPDATE-AUTO-IP"
+		licenseID := uuid.New()
+		
+		existing := &models.License{
+			ID:                 licenseID,
+			Key:                key,
+			Type:               models.LicenseTypePerpetual,
+			AutoAllowedIP:      false,
+			AutoAllowedIPLimit: 0,
+			Status:             models.LicenseStatusActive,
+		}
+
+		autoAllowedIP := true
+		limit := 10
+		
+		reqBody := map[string]interface{}{
+			"auto_allowed_ip":       true,
+			"auto_allowed_ip_limit": 10,
+		}
+		body, _ := json.Marshal(reqBody)
+
+		mockLicenseStore.On("GetLicenseByKey", mock.Anything, key).Return(existing, nil).Once()
+		
+		mockLicenseStore.On("UpdateLicense", mock.Anything, mock.MatchedBy(func(l *models.License) bool {
+			return l.ID == licenseID && l.AutoAllowedIP == autoAllowedIP && l.AutoAllowedIPLimit == limit
+		})).Return(nil).Once()
+
+		req, _ := http.NewRequest("PUT", "/admin/keys", bytes.NewBuffer(body))
+		req.Header.Set("X-License-Key", key)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		
+		var resp models.License
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.True(t, resp.AutoAllowedIP)
+		assert.Equal(t, 10, resp.AutoAllowedIPLimit)
 		
 		mockLicenseStore.AssertExpectations(t)
 	})
