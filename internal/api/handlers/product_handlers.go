@@ -54,8 +54,9 @@ func ListProductsHandler(productStore store.ProductStore) gin.HandlerFunc {
 
 		pagination := ParsePaginationParams(c)
 
-		products, totalCount, err := productStore.ListProducts(c.Request.Context(), ownerID, pagination)
+	products, totalCount, err := productStore.ListProducts(c.Request.Context(), ownerID, pagination)
 		if err != nil {
+			slog.Error("Failed to list products", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list products"})
 			return
 		}
@@ -249,6 +250,7 @@ func UpdateProductHandler(productStore store.ProductStore, logStore store.LogSto
 		product.UpdatedAt = time.Now()
 
 		if err := productStore.UpdateProduct(c.Request.Context(), product); err != nil {
+			slog.Error("Failed to update product", "error", err, "product_id", id)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product"})
 			return
 		}
@@ -288,6 +290,7 @@ func DeleteProductHandler(productStore store.ProductStore, logStore store.LogSto
 		}
 
 		if err := productStore.DeleteProduct(c.Request.Context(), id); err != nil {
+			slog.Error("Failed to delete product", "error", err, "product_id", id)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete product"})
 			return
 		}

@@ -50,6 +50,7 @@ func ListProductGroupsHandler(productGroupStore store.ProductGroupStore) gin.Han
 
 		groups, totalCount, err := productGroupStore.ListProductGroups(c.Request.Context(), ownerID, pagination)
 		if err != nil {
+			slog.Error("Failed to list product groups", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list product groups"})
 			return
 		}
@@ -181,6 +182,7 @@ func UpdateProductGroupHandler(productGroupStore store.ProductGroupStore, logSto
 		group.UpdatedAt = time.Now()
 
 		if err := productGroupStore.UpdateProductGroup(c.Request.Context(), group); err != nil {
+			slog.Error("Failed to update product group", "error", err, "group_id", id)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product group"})
 			return
 		}
@@ -220,6 +222,7 @@ func DeleteProductGroupHandler(productGroupStore store.ProductGroupStore, logSto
 		}
 
 		if err := productGroupStore.DeleteProductGroup(c.Request.Context(), id); err != nil {
+			slog.Error("Failed to delete product group", "error", err, "group_id", id)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete product group"})
 			return
 		}
