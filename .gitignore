@@ -1,5 +1,6 @@
 # go build output
 clortho-server
+clortho-migrate
 /server
 
 # config file

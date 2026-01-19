@@ -45,15 +45,23 @@ func main() {
 	}
 
 	if direction == "up" {
-		if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		err := m.Up()
+		if err == migrate.ErrNoChange {
+			fmt.Println("No migrations to apply (already up to date)")
+		} else if err != nil {
 			log.Fatalf("Failed to migrate up: %v", err)
+		} else {
+			fmt.Println("Migrated up successfully")
 		}
-		fmt.Println("Migrated up successfully")
 	} else if direction == "down" {
-		if err := m.Down(); err != nil && err != migrate.ErrNoChange {
+		err := m.Down()
+		if err == migrate.ErrNoChange {
+			fmt.Println("No migrations to revert")
+		} else if err != nil {
 			log.Fatalf("Failed to migrate down: %v", err)
+		} else {
+			fmt.Println("Migrated down successfully")
 		}
-		fmt.Println("Migrated down successfully")
 	} else if direction == "force" {
 		if version == -1 {
 			log.Fatal("version is required for force")
@@ -67,6 +75,17 @@ func main() {
 			log.Fatalf("Failed to drop database: %v", err)
 		}
 		fmt.Println("Database dropped successfully")
+	} else if direction == "version" {
+		v, dirty, err := m.Version()
+		if err != nil {
+			if err == migrate.ErrNilVersion {
+				fmt.Println("No migrations applied (version: nil)")
+			} else {
+				log.Fatalf("Failed to get version: %v", err)
+			}
+		} else {
+			fmt.Printf("Version: %d, Dirty: %v\n", v, dirty)
+		}
 	} else {
 		log.Fatalf("Invalid direction: %s", direction)
 	}

@@ -5,6 +5,9 @@ all: build
 build:
 	go build -v -o clortho-server ./cmd/server/main.go
 
+build-migrate:
+	go build -v -o clortho-migrate ./scripts/migrate.go
+
 check-vuln:
 	govulncheck ./cmd/... ./internal/...
 

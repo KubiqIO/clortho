@@ -131,6 +131,8 @@ go run scripts/verify_token.go -pubkey "YOUR_PUBLIC_KEY" -token "JWT_TOKEN_FROM_
 
 #### Database Migrations
 Run database migrations using the provided script or Makefile.
+
+**Development (Local):**
 ```bash
 # Using Makefile (defaults to reading config.yaml)
 make migrate-up
@@ -138,6 +140,19 @@ make migrate-down
 
 # Using script directly
 go run scripts/migrate.go -direction up
+```
+
+**Production (Docker):**
+The docker image includes a compiled migration binary `clortho-migrate`.
+
+```bash
+# Run migration using the container
+docker run --rm \
+  -v $(pwd)/config.yaml:/app/config.yaml \
+  clortho ./clortho-migrate -direction up
+
+# Or if using docker compose
+docker compose run --rm clortho ./clortho-migrate -direction up
 ```
 
 ### Installation & Running
@@ -184,15 +199,15 @@ go run scripts/migrate.go -direction up
    **Docker Compose:**
    To run the full stack (App + PostgreSQL):
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 
    **Token Generation:**
    The docker image includes a pre-compiled binary to generate admin tokens.
    ```bash
    docker run --rm clortho ./generate-token
-   # or if using docker-compose
-   docker-compose exec app ./generate-token
+   # or if using docker compose
+   docker compose exec app ./generate-token
    ```
 
 

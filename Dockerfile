@@ -9,6 +9,7 @@ RUN go mod download
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o clortho-server ./cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o clortho-migrate ./scripts/migrate.go
 
 # Runtime stage
 FROM alpine:latest
@@ -17,6 +18,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/clortho-server .
+COPY --from=builder /app/clortho-migrate .
 # Copy migrations directory (required by the app on startup)
 COPY --from=builder /app/migrations ./migrations
 
