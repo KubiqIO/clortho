@@ -6,10 +6,15 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"clortho/internal/models"
 )
+
+// pgerrcodeUniqueViolation is SQLSTATE 23505, raised here by the UNIQUE
+// constraint on licenses.key.
+const pgerrcodeUniqueViolation = "23505"
 
 type LicenseStore interface {
 	CreateLicense(ctx context.Context, license *models.License) error
@@ -58,6 +63,10 @@ func (s *PostgresLicenseStore) CreateLicense(ctx context.Context, license *model
 		license.AutoAllowedIPLimit,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcodeUniqueViolation {
+			return fmt.Errorf("%w: license key", ErrDuplicate)
+		}
 		return fmt.Errorf("failed to create license: %w", err)
 	}
 

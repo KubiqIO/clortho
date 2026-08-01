@@ -323,6 +323,31 @@ curl -X POST http://localhost:8080/admin/keys \
 
 **Duration formats**: `5m` (minutes), `1h` (hours), `1d` (days), `2w` (weeks), `3mo` (months), `1y` (years)
 
+###### Importing an existing key
+
+Pass `key` to store a licence under a key string you already have, instead of
+generating one. This is for migrating licences in from another system, where the
+holder's key is already deployed and cannot change:
+
+```bash
+curl -X POST http://localhost:8080/admin/keys \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product_id": "YOUR_PRODUCT_UUID",
+    "type": "perpetual",
+    "key": "Owned-3f9a2c8e1b7d"
+  }'
+```
+
+- The key is stored verbatim; `prefix` and `length` do not apply and are rejected
+  if sent alongside `key`.
+- Must be 1–255 characters of printable, non-whitespace ASCII. Keys travel in the
+  `X-License-Key` header, so whitespace and control characters are refused.
+- A key already in use returns **409 Conflict**, which makes a re-run of an
+  importer safe to distinguish from a genuine failure.
+- Imports are recorded in the admin log with `imported_key: true`.
+
 ##### Update a License
 **Endpoint**: `PUT /admin/keys/:key`
 

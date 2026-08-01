@@ -23,6 +23,9 @@ type generateLicenseRequest struct {
 	Type            models.LicenseType `json:"type" binding:"required"`
 	ExpiresAt       *time.Time         `json:"expires_at"`
 	Duration        string             `json:"duration"`
+	// Key imports an existing key string instead of generating one, so a licence
+	// migrated from another system keeps the key its holder already has.
+	Key             string             `json:"key"`
 	Prefix          string             `json:"prefix"`
 	Length          int                `json:"length"`
 	FeatureCodes    []string           `json:"feature_codes"`
@@ -238,6 +241,17 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 			return
 		}
 
+		if req.Key != "" {
+			if req.Prefix != "" || req.Length != 0 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot specify prefix or length together with key"})
+				return
+			}
+			if err := service.ValidateLicenseKey(req.Key); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid key: %v", err)})
+				return
+			}
+		}
+
 		var expiresAt *time.Time
 		if req.ExpiresAt != nil {
 			expiresAt = req.ExpiresAt
@@ -314,16 +328,32 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 			prefix = req.Prefix
 		}
 
-		parsedCharset, err := service.ParseCharset(charsetRaw)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid charset configuration: %v", err)})
-			return
-		}
+		var key string
+		if req.Key != "" {
+			// Reject a collision up front so the caller gets "this key is taken"
+			// rather than a save failure. CreateLicense still enforces it, since
+			// a concurrent create can land between this check and the insert.
+			if _, err := licenseStore.GetLicenseByKey(c.Request.Context(), req.Key); err == nil {
+				c.JSON(http.StatusConflict, gin.H{"error": "A license with that key already exists"})
+				return
+			} else if !errors.Is(err, store.ErrNotFound) {
+				slog.Error("Failed to check key availability", "error", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check key availability"})
+				return
+			}
+			key = req.Key
+		} else {
+			parsedCharset, err := service.ParseCharset(charsetRaw)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid charset configuration: %v", err)})
+				return
+			}
 
-		key, err := service.GenerateLicenseKey(prefix, length, separator, parsedCharset)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate license key"})
-			return
+			key, err = service.GenerateLicenseKey(prefix, length, separator, parsedCharset)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate license key"})
+				return
+			}
 		}
 
 		productID := product.ID
@@ -353,16 +383,26 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 		}
 
 		if err := licenseStore.CreateLicense(c.Request.Context(), license); err != nil {
+			if errors.Is(err, store.ErrDuplicate) {
+				c.JSON(http.StatusConflict, gin.H{"error": "A license with that key already exists"})
+				return
+			}
 			slog.Error("Failed to create license", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save license"})
 			return
 		}
 
-		slog.Info("License generated", "license_key", license.Key, "product_id", productID)
+		slog.Info("License generated", "license_key", license.Key, "product_id", productID, "imported_key", req.Key != "")
 
 		details := map[string]interface{}(nil)
 		dt, _ := json.Marshal(license)
 		json.Unmarshal(dt, &details)
+		if req.Key != "" && details != nil {
+			// Importing a caller-supplied key is the one path here that is not
+			// self-evidently safe, and there is a single admin role, so the audit
+			// trail is what distinguishes it.
+			details["imported_key"] = true
+		}
 
 		logEntry := &models.AdminLog{
 			Action:     "GENERATE_LICENSE",

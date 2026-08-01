@@ -32,6 +32,32 @@ func ParseCharset(input string) (string, error) {
 	return builder.String(), nil
 }
 
+// MaxLicenseKeyLength bounds a caller-supplied key. license_check_logs.license_key
+// is VARCHAR(255), so a longer key would validate fine and then fail to log.
+const MaxLicenseKeyLength = 255
+
+// ValidateLicenseKey checks a caller-supplied license key, as accepted by
+// POST /admin/keys when importing keys that already exist elsewhere.
+//
+// Generated keys are drawn from a charset, but an imported key is whatever the
+// system it came from produced, so this only rejects what would actually break:
+// keys travel in the X-License-Key request header, where whitespace and control
+// characters are a header-injection vector rather than an unusual key.
+func ValidateLicenseKey(key string) error {
+	if key == "" {
+		return fmt.Errorf("license key must not be empty")
+	}
+	if len(key) > MaxLicenseKeyLength {
+		return fmt.Errorf("license key must be at most %d characters, got %d", MaxLicenseKeyLength, len(key))
+	}
+	for i := 0; i < len(key); i++ {
+		if c := key[i]; c < '!' || c > '~' {
+			return fmt.Errorf("license key must contain only printable non-whitespace ASCII, found byte %#x at position %d", c, i)
+		}
+	}
+	return nil
+}
+
 func GenerateLicenseKey(prefix string, length int, separator string, charset string) (string, error) {
 	if length <= 0 {
 		length = 12 // Default length
