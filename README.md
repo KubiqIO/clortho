@@ -237,6 +237,29 @@ Applications can verify the authenticity of the response using the corresponding
 |-----------|-------------|
 | `version` | Validate if license is authorized for this release version |
 | `feature` | Validate if license has this feature code enabled |
+| `usage.<field>` | Any number of usage figures to echo back in the signed token as `reported_usage`. Not validated, metered or stored |
+| `nonce` | Random per-request value to echo back in the signed token as `nonce`, so a response cannot be replayed against a later request |
+
+Unknown query parameters are ignored.
+
+**Reporting Usage**:
+
+Clortho is deliberately neutral about what you count. Any query parameter under the `usage.`
+namespace is echoed back in the signed token under its own name, with the prefix stripped:
+
+```
+GET /check?usage.clients=200&usage.ips=20
+   →  reported_usage: { "clients": "200", "ips": "20" }
+```
+
+Field names are arbitrary and need no prior registration — Clortho holds no list of them and
+attaches no meaning to any of them. The prefix is what keeps the namespace open: it separates a
+usage report from `version`, `feature`, `nonce`, and from whatever extra parameters older
+integrations happen to send, so those can go on being ignored.
+
+Values are echoed as strings, exactly as received. Each field name and value is capped at 64
+characters (a name longer than that is dropped rather than shortened), and a single report carries
+at most 32 fields.
 
 **Examples**:
 ```bash
@@ -248,6 +271,10 @@ curl -H "X-License-Key: DEMO-aBc123..." "http://localhost:8080/check?version=2.0
 
 # Check if license has SSO feature enabled
 curl -H "X-License-Key: DEMO-aBc123..." "http://localhost:8080/check?feature=sso"
+
+# Report two usage figures and pin the response to this request
+curl -H "X-License-Key: DEMO-aBc123..." \
+  "http://localhost:8080/check?usage.clients=200&usage.ips=20&nonce=$(openssl rand -hex 16)"
 ```
 
 **Response**:
@@ -259,6 +286,53 @@ curl -H "X-License-Key: DEMO-aBc123..." "http://localhost:8080/check?feature=sso
   "valid": false
 }
 ```
+
+**Signed Token Claims**:
+
+When `response_signing_private_key` is configured, `token` is an EdDSA (Ed25519) JWT carrying:
+
+| Claim | Description |
+|-------|-------------|
+| `sub` | The license key that was checked |
+| `iss` | Always `clortho` |
+| `valid` | The validation result |
+| `features` | Feature codes enabled on the license |
+| `exp` | License expiry, omitted for perpetual licenses |
+| `iat` | When the response was issued, for freshness checks |
+| `reported_usage` | Object of `usage.<field>` params echoed verbatim, keyed by field name. **Omitted entirely when no usage param arrived** — never sent as `{}` |
+| `nonce` | Verbatim echo of the `nonce` param. Omitted when not sent, or when longer than 64 characters |
+
+Example token payload for `?usage.clients=200&usage.ips=20&nonce=3f8a...`:
+
+```json
+{
+  "sub": "DEMO-aBc123...",
+  "iss": "clortho",
+  "valid": true,
+  "features": ["sso"],
+  "exp": 1735689599,
+  "iat": 1723459200,
+  "reported_usage": { "clients": "200", "ips": "20" },
+  "nonce": "3f8a..."
+}
+```
+
+> [!IMPORTANT]
+> **Detecting tampered usage reports.** `reported_usage` echoes what the server *received*, not
+> what the client *sent*. A client that reports usage should send a fresh random `nonce` alongside
+> it and then verify, against the signed token:
+> 1. `nonce` matches the value it just generated (the response is not a replay), and
+> 2. `reported_usage` contains every field it sent, each string-equal to the value it sent.
+>
+> Check the fields you sent individually rather than comparing object sizes — a proxy that drops
+> `usage.ips` leaves a report that still looks well formed, and it is the missing key that gives it
+> away. A missing `reported_usage` entirely means no usage param reached Clortho, and is **not** the
+> same as a reported zero — it is never defaulted. An intermediary that rewrites
+> `usage.clients=200` to `usage.clients=1`, or strips it, cannot forge the signature covering these
+> claims, so either tamper shows up as a mismatch. Signing the request would not help here: the
+> reporting client holds the secret.
+>
+> Clortho does not meter, validate or store these values, and they never affect `valid`.
 
 > [!NOTE]
 > - The `reason` field is only present when `valid` is `false`

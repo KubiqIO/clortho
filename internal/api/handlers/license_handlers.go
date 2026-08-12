@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -211,7 +212,7 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 
 		if responseSigningPrivateKey != "" {
 			// Generate signed response token (JWT)
-			token, err := service.SignLicense(responseSigningPrivateKey, key, license.ExpiresAt, valid, license.Features)
+			token, err := service.SignLicense(responseSigningPrivateKey, key, license.ExpiresAt, valid, license.Features, echoedRequestValues(c))
 			if err != nil {
 				slog.Error("Failed to generate response signing token", "error", err, "key", key)
 			} else {
@@ -223,6 +224,45 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 		logEntry.ResponsePayload = map[string]interface{}(response)
 		c.JSON(http.StatusOK, response)
 	}
+}
+
+// usageParamPrefix namespaces the query params that /check echoes back. The
+// prefix is what lets Clortho stay neutral about what is being counted: it never
+// needs to know the field names, callers can report as many as they like, and an
+// unprefixed param - including whatever extras older integrations send - is still
+// ignored.
+const usageParamPrefix = "usage."
+
+// echoedRequestValues collects the query params that /check reflects back inside
+// the signed token. Presence is taken from the query string rather than from a
+// non-empty value, so the claims are absent only when the param genuinely did
+// not arrive - which is what tells a client its report was stripped in transit.
+//
+// Unknown params stay ignored, and no value here affects validation.
+func echoedRequestValues(c *gin.Context) service.ResponseEchoes {
+	var echoes service.ResponseEchoes
+
+	for param, values := range c.Request.URL.Query() {
+		// A bare "usage" carries no field name, and "usage." names an empty one:
+		// neither is something a caller can meaningfully compare against.
+		name, found := strings.CutPrefix(param, usageParamPrefix)
+		if !found || name == "" || len(values) == 0 {
+			continue
+		}
+
+		if echoes.ReportedUsage == nil {
+			echoes.ReportedUsage = make(map[string]string, len(values))
+		}
+		// Repeats collapse to the first value, matching how the rest of the
+		// handler reads query params.
+		echoes.ReportedUsage[name] = values[0]
+	}
+
+	if nonce, ok := c.GetQuery("nonce"); ok {
+		echoes.Nonce = &nonce
+	}
+
+	return echoes
 }
 
 // GenerateLicenseHandler handles POST /admin/keys
