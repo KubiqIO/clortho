@@ -69,6 +69,12 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 			UserAgent: c.Request.UserAgent(),
 			CreatedAt: time.Now(),
 		}
+		// The raw reported address is logged even when it is ignored or
+		// unparseable — when an installation's checks look wrong, the claim
+		// it made is the first thing worth seeing.
+		if reportedIP := c.Query(usageParamPrefix + "ip"); reportedIP != "" {
+			logEntry.RequestPayload[usageParamPrefix+"ip"] = reportedIP
+		}
 		
 		defer func() {
 			service.AsyncLogLicenseCheck(c.Request.Context(), logStore, logEntry, logEntry.StatusCode == http.StatusOK && (logEntry.ResponsePayload["valid"] == true), func() string {
@@ -95,6 +101,24 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 		logEntry.ProductID = &license.ProductID
 		logEntry.LicenseID = &license.ID
 
+		// The address the check judges. An integration validating through
+		// proxies may report where it actually lives as usage.ip= — RackBill
+		// does, because the hop through Cloudflare makes the connection's
+		// source address an edge node's, and a handful of edge nodes eats an
+		// auto-allow limit meant to count servers. The claim is honored only
+		// on auto-tracking licenses: there the list exists to notice the
+		// software moving between machines, which a self-reported (often
+		// internal) address serves and a proxy's cannot. A hand-pinned
+		// allowlist keeps judging the connection itself — honoring an address
+		// the client typed would let any key holder walk past it.
+		clientIPStr := c.ClientIP()
+		if license.AutoAllowedIP {
+			if reported := net.ParseIP(strings.TrimSpace(c.Query(usageParamPrefix + "ip"))); reported != nil {
+				clientIPStr = reported.String()
+				logEntry.IPAddress = clientIPStr
+			}
+		}
+
 		valid := true
 		var reason string
 
@@ -109,7 +133,6 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 
 		// Check IP restrictions
 		if valid && (len(license.AllowedIPs) > 0 || len(license.AllowedNetworks) > 0 || license.AutoAllowedIP) {
-			clientIPStr := c.ClientIP()
 			clientIP := net.ParseIP(clientIPStr)
 			if clientIP == nil {
 				valid = false
