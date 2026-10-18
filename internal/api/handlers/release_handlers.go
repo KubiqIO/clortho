@@ -24,8 +24,6 @@ type updateReleaseRequest struct {
 	Version string `json:"version" binding:"required"`
 }
 
-
-
 // UpdateReleaseHandler handles PUT /admin/releases/:releaseId
 func UpdateReleaseHandler(releaseStore store.ReleaseStore, logStore store.LogStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -46,7 +44,7 @@ func UpdateReleaseHandler(releaseStore store.ReleaseStore, logStore store.LogSto
 			ID:      rID,
 			Version: req.Version,
 		}
-		
+
 		// Fetch existing release to get owner_id for log
 		existingRelease, _ := releaseStore.GetRelease(c.Request.Context(), releaseID)
 
@@ -65,7 +63,12 @@ func UpdateReleaseHandler(releaseStore store.ReleaseStore, logStore store.LogSto
 			Action:     "UPDATE_RELEASE",
 			EntityType: "releases",
 			EntityID:   &rID,
-			OwnerID:    func() *string { if existingRelease != nil { return existingRelease.OwnerID }; return nil }(),
+			OwnerID: func() *string {
+				if existingRelease != nil {
+					return existingRelease.OwnerID
+				}
+				return nil
+			}(),
 			Details: map[string]interface{}{
 				"request": req,
 			},
@@ -81,7 +84,7 @@ func UpdateReleaseHandler(releaseStore store.ReleaseStore, logStore store.LogSto
 func DeleteReleaseHandler(releaseStore store.ReleaseStore, logStore store.LogStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		releaseID := c.Param("releaseId")
-		
+
 		// Fetch existing release to get owner_id for log
 		existingRelease, _ := releaseStore.GetRelease(c.Request.Context(), releaseID)
 
@@ -95,9 +98,14 @@ func DeleteReleaseHandler(releaseStore store.ReleaseStore, logStore store.LogSto
 			Action:     "DELETE_RELEASE",
 			EntityType: "releases",
 			EntityID:   &rID,
-			OwnerID:    func() *string { if existingRelease != nil { return existingRelease.OwnerID }; return nil }(),
-			Details:    map[string]interface{}{},
-			CreatedAt:  time.Now(),
+			OwnerID: func() *string {
+				if existingRelease != nil {
+					return existingRelease.OwnerID
+				}
+				return nil
+			}(),
+			Details:   map[string]interface{}{},
+			CreatedAt: time.Now(),
 		}
 		service.AsyncLogAdminAction(c.Request.Context(), logStore, logEntry)
 

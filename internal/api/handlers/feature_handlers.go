@@ -28,8 +28,6 @@ type updateFeatureRequest struct {
 	Description string `json:"description"`
 }
 
-
-
 // UpdateFeatureHandler handles PUT /admin/features/:featureId
 func UpdateFeatureHandler(featureStore store.FeatureStore, logStore store.LogStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -93,7 +91,7 @@ func UpdateFeatureHandler(featureStore store.FeatureStore, logStore store.LogSto
 func DeleteFeatureHandler(featureStore store.FeatureStore, logStore store.LogStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		featureID := c.Param("featureId")
-		
+
 		// Fetch existing feature to get owner_id for log
 		existingFeature, _ := featureStore.GetFeature(c.Request.Context(), featureID)
 
@@ -107,17 +105,20 @@ func DeleteFeatureHandler(featureStore store.FeatureStore, logStore store.LogSto
 			Action:     "DELETE_FEATURE",
 			EntityType: "features",
 			EntityID:   &fID,
-			OwnerID:    func() *string { if existingFeature != nil { return existingFeature.OwnerID }; return nil }(),
-			Details:    map[string]interface{}{},
-			CreatedAt:  time.Now(),
+			OwnerID: func() *string {
+				if existingFeature != nil {
+					return existingFeature.OwnerID
+				}
+				return nil
+			}(),
+			Details:   map[string]interface{}{},
+			CreatedAt: time.Now(),
 		}
 		service.AsyncLogAdminAction(c.Request.Context(), logStore, logEntry)
 
 		c.JSON(http.StatusOK, gin.H{"message": "Feature deleted"})
 	}
 }
-
-
 
 // CreateFeatureHandler handles POST /admin/features
 func CreateFeatureHandler(featureStore store.FeatureStore, logStore store.LogStore) gin.HandlerFunc {

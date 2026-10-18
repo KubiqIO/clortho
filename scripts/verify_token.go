@@ -16,7 +16,7 @@ func main() {
 
 	flag.StringVar(&publicKeyB64, "pubkey", "", "Base64 encoded public key (from config.yaml)")
 	flag.StringVar(&tokenString, "token", "", "JWT Token (from API response)")
-	
+
 	flag.Parse()
 
 	if publicKeyB64 == "" || tokenString == "" {
@@ -54,16 +54,16 @@ func main() {
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		fmt.Println("✅ Token is VALID and AUTHENTIC.")
-		
+
 		fmt.Println("\nLicense Details:")
 		fmt.Printf("- Key: %s\n", claims["sub"])
 		fmt.Printf("- Valid: %v\n", claims["valid"])
 		fmt.Printf("- Features: %v\n", claims["features"])
-		
+
 		if exp, ok := claims["exp"].(float64); ok {
 			tm := time.Unix(int64(exp), 0)
 			fmt.Printf("- Expires: %s\n", tm.Format(time.RFC3339))
-			
+
 			if time.Now().After(tm) {
 				fmt.Println("❌ LICENSE EXPIRED")
 			} else {

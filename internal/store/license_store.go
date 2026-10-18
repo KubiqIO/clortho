@@ -315,13 +315,13 @@ func (s *PostgresLicenseStore) ListLicenses(ctx context.Context, ownerID *string
 		LEFT JOIN license_releases lr ON l.id = lr.release_id
 		LEFT JOIN releases r ON lr.release_id = r.id
 	`
-	
+
 	args := []interface{}{}
 	if ownerID != nil {
 		query += " WHERE l.owner_id = $1"
 		args = append(args, ownerID)
 	}
-	
+
 	query += " GROUP BY l.id ORDER BY l.created_at DESC"
 
 	limit := pagination.Limit
@@ -333,7 +333,7 @@ func (s *PostgresLicenseStore) ListLicenses(ctx context.Context, ownerID *string
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 
@@ -368,7 +368,7 @@ func (s *PostgresLicenseStore) ListLicenses(ctx context.Context, ownerID *string
 		}
 		licenses = append(licenses, l)
 	}
-	
+
 	if err := rows.Err(); err != nil {
 		return nil, 0, fmt.Errorf("error iterating licenses: %w", err)
 	}

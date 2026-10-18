@@ -41,7 +41,7 @@ func GetLicenseCheckLogsHandler(logStore store.LogStore) gin.HandlerFunc {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch license check logs"})
 				return
 			}
-			
+
 			if logs == nil {
 				logs = []models.LicenseCheckLog{}
 			}
@@ -67,7 +67,7 @@ func GetLicenseCheckLogsHandler(logStore store.LogStore) gin.HandlerFunc {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch license check logs"})
 				return
 			}
-			
+
 			if logs == nil {
 				logs = []models.LicenseCheckLog{}
 			}
@@ -93,7 +93,7 @@ func GetLicenseCheckLogsHandler(logStore store.LogStore) gin.HandlerFunc {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch license check logs"})
 				return
 			}
-			
+
 			if logs == nil {
 				logs = []models.LicenseCheckLog{}
 			}

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,54 +19,54 @@ import (
 )
 
 type generateLicenseRequest struct {
-	ProductID       string             `json:"product_id" binding:"required"`
-	Type            models.LicenseType `json:"type" binding:"required"`
-	ExpiresAt       *time.Time         `json:"expires_at"`
-	Duration        string             `json:"duration"`
+	ProductID string             `json:"product_id" binding:"required"`
+	Type      models.LicenseType `json:"type" binding:"required"`
+	ExpiresAt *time.Time         `json:"expires_at"`
+	Duration  string             `json:"duration"`
 	// Key imports an existing key string instead of generating one, so a licence
 	// migrated from another system keeps the key its holder already has.
-	Key             string             `json:"key"`
-	Prefix          string             `json:"prefix"`
-	Length          int                `json:"length"`
-	FeatureCodes    []string           `json:"feature_codes"`
-	ReleaseVersions []string           `json:"release_versions"`
-	AllowedIPs      []string           `json:"allowed_ips"`
-	AllowedNetworks []string           `json:"allowed_networks"`
-	OwnerID         *string            `json:"owner_id"`
-	AutoAllowedIP     *bool              `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit *int              `json:"auto_allowed_ip_limit"`
+	Key                string   `json:"key"`
+	Prefix             string   `json:"prefix"`
+	Length             int      `json:"length"`
+	FeatureCodes       []string `json:"feature_codes"`
+	ReleaseVersions    []string `json:"release_versions"`
+	AllowedIPs         []string `json:"allowed_ips"`
+	AllowedNetworks    []string `json:"allowed_networks"`
+	OwnerID            *string  `json:"owner_id"`
+	AutoAllowedIP      *bool    `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit *int     `json:"auto_allowed_ip_limit"`
 }
 
 type updateLicenseRequest struct {
-	Type            models.LicenseType `json:"type"`
-	ExpiresAt       *time.Time         `json:"expires_at"`
-	Duration        string             `json:"duration"`
-	Prefix          string             `json:"prefix"`
-	Length          int                `json:"length"`
-	FeatureCodes    []string           `json:"feature_codes"`
-	ReleaseVersions []string           `json:"release_versions"`
-	AllowedIPs      []string           `json:"allowed_ips"`
-	AllowedNetworks []string           `json:"allowed_networks"`
-	Status          models.LicenseStatus `json:"status"`
-	OwnerID         *string              `json:"owner_id"`
-	AutoAllowedIP     *bool              `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit *int              `json:"auto_allowed_ip_limit"`
+	Type               models.LicenseType   `json:"type"`
+	ExpiresAt          *time.Time           `json:"expires_at"`
+	Duration           string               `json:"duration"`
+	Prefix             string               `json:"prefix"`
+	Length             int                  `json:"length"`
+	FeatureCodes       []string             `json:"feature_codes"`
+	ReleaseVersions    []string             `json:"release_versions"`
+	AllowedIPs         []string             `json:"allowed_ips"`
+	AllowedNetworks    []string             `json:"allowed_networks"`
+	Status             models.LicenseStatus `json:"status"`
+	OwnerID            *string              `json:"owner_id"`
+	AutoAllowedIP      *bool                `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit *int                 `json:"auto_allowed_ip_limit"`
 }
 
 // CheckLicenseHandler handles GET /check
 func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.ProductStore, responseSigningPrivateKey string, logStore store.LogStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := c.GetHeader("X-License-Key")
-		
+
 		logEntry := &models.LicenseCheckLog{
 			RequestPayload: map[string]interface{}{
 				"version": c.Query("version"),
 				"feature": c.Query("feature"),
 			},
 			LicenseKey: key,
-			IPAddress: c.ClientIP(),
-			UserAgent: c.Request.UserAgent(),
-			CreatedAt: time.Now(),
+			IPAddress:  c.ClientIP(),
+			UserAgent:  c.Request.UserAgent(),
+			CreatedAt:  time.Now(),
 		}
 		// The raw reported address is logged even when it is ignored or
 		// unparseable — when an installation's checks look wrong, the claim
@@ -75,7 +74,7 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 		if reportedIP := c.Query(usageParamPrefix + "ip"); reportedIP != "" {
 			logEntry.RequestPayload[usageParamPrefix+"ip"] = reportedIP
 		}
-		
+
 		defer func() {
 			service.AsyncLogLicenseCheck(c.Request.Context(), logStore, logEntry, logEntry.StatusCode == http.StatusOK && (logEntry.ResponsePayload["valid"] == true), func() string {
 				if r, ok := logEntry.ResponsePayload["reason"].(string); ok {
@@ -106,7 +105,7 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 			c.JSON(logEntry.StatusCode, logEntry.ResponsePayload)
 			return
 		}
-		
+
 		logEntry.ProductID = &license.ProductID
 		logEntry.LicenseID = &license.ID
 
@@ -353,7 +352,7 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 
 		autoAllowedIP := product.AutoAllowedIP
 		autoAllowedIPLimit := product.AutoAllowedIPLimit
-	
+
 		// If product belongs to a group, inherit missing settings
 		if product.ProductGroupID != nil {
 			group, err := productGroupStore.GetProductGroup(c.Request.Context(), product.ProductGroupID.String())
@@ -431,19 +430,19 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 		productID := product.ID
 
 		license := &models.License{
-			ID:              uuid.New(),
-			Key:             key,
-			OwnerID:         req.OwnerID,
-			Type:            req.Type,
-			ProductID:       productID,
-			ExpiresAt:       expiresAt,
-			AllowedIPs:      req.AllowedIPs,
-			AllowedNetworks: req.AllowedNetworks,
-			Status:          models.LicenseStatusActive,
-			AutoAllowedIP:     autoAllowedIP,
+			ID:                 uuid.New(),
+			Key:                key,
+			OwnerID:            req.OwnerID,
+			Type:               req.Type,
+			ProductID:          productID,
+			ExpiresAt:          expiresAt,
+			AllowedIPs:         req.AllowedIPs,
+			AllowedNetworks:    req.AllowedNetworks,
+			Status:             models.LicenseStatusActive,
+			AutoAllowedIP:      autoAllowedIP,
 			AutoAllowedIPLimit: autoAllowedIPLimit,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
+			CreatedAt:          time.Now(),
+			UpdatedAt:          time.Now(),
 		}
 
 		if len(req.FeatureCodes) > 0 {
@@ -678,7 +677,7 @@ func UpdateLicenseHandler(licenseStore store.LicenseStore, logStore store.LogSto
 func GetLicenseHandler(licenseStore store.LicenseStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := c.GetHeader("X-License-Key")
-		
+
 		// If key is empty, return all licenses (with optional filter)
 		if key == "" {
 			var ownerID *string

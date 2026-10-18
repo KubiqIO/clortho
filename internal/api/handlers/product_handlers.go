@@ -1,7 +1,6 @@
 package handlers
 
 import (
-
 	"log/slog"
 	"net/http"
 	"time"
@@ -15,33 +14,33 @@ import (
 )
 
 type createProductRequest struct {
-	Name             string `json:"name" binding:"required"`
-	Description      string `json:"description"`
-	LicensePrefix    string `json:"license_prefix"`
-	LicenseSeparator string `json:"license_separator"`
-	LicenseCharset   string `json:"license_charset"`
-	LicenseLength    int    `json:"license_length"`
-	LicenseType      models.LicenseType `json:"license_type"`
-	LicenseDuration  string `json:"license_duration"`
-	ProductGroupID   string `json:"product_group_id"`
-	AutoAllowedIP    bool   `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit int  `json:"auto_allowed_ip_limit"`
-	OwnerID          *string `json:"owner_id"`
+	Name               string             `json:"name" binding:"required"`
+	Description        string             `json:"description"`
+	LicensePrefix      string             `json:"license_prefix"`
+	LicenseSeparator   string             `json:"license_separator"`
+	LicenseCharset     string             `json:"license_charset"`
+	LicenseLength      int                `json:"license_length"`
+	LicenseType        models.LicenseType `json:"license_type"`
+	LicenseDuration    string             `json:"license_duration"`
+	ProductGroupID     string             `json:"product_group_id"`
+	AutoAllowedIP      bool               `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit int                `json:"auto_allowed_ip_limit"`
+	OwnerID            *string            `json:"owner_id"`
 }
 
 type updateProductRequest struct {
-	Name             string `json:"name"`
-	Description      string `json:"description"`
-	LicensePrefix    string `json:"license_prefix"`
-	LicenseSeparator string `json:"license_separator"`
-	LicenseCharset   string `json:"license_charset"`
-	LicenseLength    int    `json:"license_length"`
-	LicenseType      models.LicenseType `json:"license_type"`
-	LicenseDuration  string `json:"license_duration"`
-	ProductGroupID   string `json:"product_group_id"`
-	AutoAllowedIP    *bool  `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit *int `json:"auto_allowed_ip_limit"`
-	OwnerID          *string `json:"owner_id"`
+	Name               string             `json:"name"`
+	Description        string             `json:"description"`
+	LicensePrefix      string             `json:"license_prefix"`
+	LicenseSeparator   string             `json:"license_separator"`
+	LicenseCharset     string             `json:"license_charset"`
+	LicenseLength      int                `json:"license_length"`
+	LicenseType        models.LicenseType `json:"license_type"`
+	LicenseDuration    string             `json:"license_duration"`
+	ProductGroupID     string             `json:"product_group_id"`
+	AutoAllowedIP      *bool              `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit *int               `json:"auto_allowed_ip_limit"`
+	OwnerID            *string            `json:"owner_id"`
 }
 
 // ListProductsHandler handles GET /admin/products
@@ -54,7 +53,7 @@ func ListProductsHandler(productStore store.ProductStore) gin.HandlerFunc {
 
 		pagination := ParsePaginationParams(c)
 
-	products, totalCount, err := productStore.ListProducts(c.Request.Context(), ownerID, pagination)
+		products, totalCount, err := productStore.ListProducts(c.Request.Context(), ownerID, pagination)
 		if err != nil {
 			slog.Error("Failed to list products", "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list products"})
@@ -94,20 +93,20 @@ func CreateProductHandler(productStore store.ProductStore, logStore store.LogSto
 		}
 
 		product := &models.Product{
-			ID:               uuid.New(),
-			OwnerID:          req.OwnerID,
-			Name:             req.Name,
-			Description:      req.Description,
-			LicensePrefix:    req.LicensePrefix,
-			LicenseSeparator: req.LicenseSeparator,
-			LicenseCharset:   req.LicenseCharset,
-			LicenseLength:    req.LicenseLength,
-			LicenseType:      req.LicenseType,
-			LicenseDuration:  req.LicenseDuration,
-			AutoAllowedIP:    req.AutoAllowedIP,
+			ID:                 uuid.New(),
+			OwnerID:            req.OwnerID,
+			Name:               req.Name,
+			Description:        req.Description,
+			LicensePrefix:      req.LicensePrefix,
+			LicenseSeparator:   req.LicenseSeparator,
+			LicenseCharset:     req.LicenseCharset,
+			LicenseLength:      req.LicenseLength,
+			LicenseType:        req.LicenseType,
+			LicenseDuration:    req.LicenseDuration,
+			AutoAllowedIP:      req.AutoAllowedIP,
 			AutoAllowedIPLimit: req.AutoAllowedIPLimit,
-			CreatedAt:        time.Now(),
-			UpdatedAt:        time.Now(),
+			CreatedAt:          time.Now(),
+			UpdatedAt:          time.Now(),
 		}
 
 		if req.ProductGroupID != "" {
@@ -277,7 +276,7 @@ func UpdateProductHandler(productStore store.ProductStore, logStore store.LogSto
 func DeleteProductHandler(productStore store.ProductStore, logStore store.LogStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		
+
 		// Fetch product to get owner_id for log
 		product, err := productStore.GetProduct(c.Request.Context(), id)
 		if err != nil {

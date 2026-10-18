@@ -49,7 +49,7 @@ func (s *PostgresProductGroupStore) ListProductGroups(ctx context.Context, owner
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 

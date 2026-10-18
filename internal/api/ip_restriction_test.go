@@ -16,12 +16,12 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"crypto/ed25519"
-	"encoding/base64"
 	"clortho/internal/config"
 	"clortho/internal/database"
 	"clortho/internal/models"
 	"clortho/internal/store"
+	"crypto/ed25519"
+	"encoding/base64"
 )
 
 func TestIPRestrictions(t *testing.T) {
@@ -57,11 +57,11 @@ func TestIPRestrictions(t *testing.T) {
 	pubKey, privKey, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 	privKeyBase64 := base64.StdEncoding.EncodeToString(privKey)
-    _ = pubKey // unused
+	_ = pubKey // unused
 
 	cfg := config.Config{
 		DatabaseURL:               connStr,
-		AdminSecret:                 "test-secret",
+		AdminSecret:               "test-secret",
 		ResponseSigningPrivateKey: privKeyBase64,
 		RateLimitAdmin: config.RateLimitConfig{
 			Enabled: false,
@@ -111,10 +111,10 @@ func TestIPRestrictions(t *testing.T) {
 		w := httptest.NewRecorder()
 		server.Router.ServeHTTP(w, req)
 		require.Equal(t, http.StatusCreated, w.Code)
-        
-        var resp models.Product
-        json.Unmarshal(w.Body.Bytes(), &resp)
-        productID = resp.ID.String()
+
+		var resp models.Product
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		productID = resp.ID.String()
 	}
 
 	// 2. Create License with IP restrictions
@@ -139,8 +139,8 @@ func TestIPRestrictions(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		clientIP string
+		name        string
+		clientIP    string
 		expectValid bool
 	}{
 		{"Allowed IPv4", "10.0.0.1", true},
@@ -165,15 +165,15 @@ func TestIPRestrictions(t *testing.T) {
 			require.Equal(t, http.StatusOK, w.Code)
 			var resp map[string]interface{}
 			json.Unmarshal(w.Body.Bytes(), &resp)
-			
+
 			valid, ok := resp["valid"].(bool)
 			require.True(t, ok)
 			require.Equal(t, tc.expectValid, valid, "Validation mismatch for IP %s", tc.clientIP)
-            
-            if !tc.expectValid {
-                reason, _ := resp["reason"].(string)
-                require.Equal(t, "IP address not allowed", reason)
-            }
+
+			if !tc.expectValid {
+				reason, _ := resp["reason"].(string)
+				require.Equal(t, "IP address not allowed", reason)
+			}
 		})
 	}
 }

@@ -17,7 +17,6 @@ type ProductStore interface {
 	DeleteProduct(ctx context.Context, id string) error
 }
 
-
 type PostgresProductStore struct {
 	DB *pgxpool.Pool
 }
@@ -50,7 +49,7 @@ func (s *PostgresProductStore) ListProducts(ctx context.Context, ownerID *string
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 
@@ -114,7 +113,7 @@ func (s *PostgresProductStore) UpdateProduct(ctx context.Context, product *model
 		SET name = $1, description = $2, license_prefix = $3, license_separator = $4, license_charset = $5, license_length = $6, license_type = $7, license_duration = $8, auto_allowed_ip = $9, auto_allowed_ip_limit = $10, product_group_id = $11, updated_at = $12
 		WHERE id = $13
 	`
-	
+
 	tag, err := s.DB.Exec(ctx, query, product.Name, product.Description, product.LicensePrefix, product.LicenseSeparator, product.LicenseCharset, product.LicenseLength, product.LicenseType, product.LicenseDuration, product.AutoAllowedIP, product.AutoAllowedIPLimit, product.ProductGroupID, product.UpdatedAt, product.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update product: %w", err)

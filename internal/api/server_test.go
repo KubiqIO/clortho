@@ -283,7 +283,7 @@ func TestReleaseHandlers(t *testing.T) {
 	mockLogStore := new(MockLogStore)
 	mockLogStore.On("CreateAdminLog", mock.Anything, mock.Anything).Return(nil).Maybe()
 	router := gin.New()
-	
+
 	// Register consolidated handlers
 	router.POST("/admin/releases", handlers.CreateReleaseHandler(mockReleaseStore, mockLogStore))
 	router.GET("/admin/releases/global", handlers.ListGlobalReleasesHandler(mockReleaseStore))
@@ -377,7 +377,6 @@ func TestReleaseHandlers(t *testing.T) {
 			"version": "1.0.1-updated",
 		}
 		body, _ := json.Marshal(reqBody)
-
 
 		mockReleaseStore.On("GetRelease", mock.Anything, releaseID.String()).Return(&models.Release{ID: releaseID, OwnerID: nil}, nil)
 		mockReleaseStore.On("UpdateRelease", mock.Anything, mock.MatchedBy(func(r *models.Release) bool {
@@ -533,7 +532,7 @@ func TestUpdateLicenseHandler(t *testing.T) {
 			FeatureCodes []string           `json:"feature_codes"`
 		}
 		reqBody := updateLicenseRequest{
-			Type:       models.LicenseTypeTimed,
+			Type:         models.LicenseTypeTimed,
 			FeatureCodes: []string{"sso"},
 		}
 		body, _ := json.Marshal(reqBody)
@@ -598,7 +597,6 @@ func TestGetLicenseHandler(t *testing.T) {
 	})
 }
 
-
 func TestProductCRUDHandlers(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockProductStore := new(MockProductStore)
@@ -636,7 +634,7 @@ func TestProductCRUDHandlers(t *testing.T) {
 			Name:           "Product With Group",
 			ProductGroupID: &groupID,
 		}
-		
+
 		group := &models.ProductGroup{
 			ID:   groupID,
 			Name: "Test Group",
@@ -650,7 +648,7 @@ func TestProductCRUDHandlers(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
@@ -658,7 +656,7 @@ func TestProductCRUDHandlers(t *testing.T) {
 		assert.NotNil(t, resp["group"])
 		groupMap := resp["group"].(map[string]interface{})
 		assert.Equal(t, groupID.String(), groupMap["id"])
-		
+
 		mockProductStore.AssertExpectations(t)
 		mockProductGroupStore.AssertExpectations(t)
 	})
@@ -734,9 +732,9 @@ func TestProductCRUDHandlers(t *testing.T) {
 
 	t.Run("CreateProduct_WithCustomSeparator_Success", func(t *testing.T) {
 		reqBody := map[string]interface{}{
-			"name":           "Separator Product",
-			"license_prefix": "SEP",
-			"license_separator":  "_",
+			"name":              "Separator Product",
+			"license_prefix":    "SEP",
+			"license_separator": "_",
 		}
 		body, _ := json.Marshal(reqBody)
 
@@ -767,8 +765,8 @@ func TestGenerateLicenseWithCustomSeparator(t *testing.T) {
 	t.Run("Success_CustomSeparator", func(t *testing.T) {
 		productID := uuid.New()
 		product := &models.Product{
-			ID:            productID,
-			Name:          "Custom Sep Product",
+			ID:               productID,
+			Name:             "Custom Sep Product",
 			LicensePrefix:    "CUSTOM",
 			LicenseSeparator: "#",
 		}
@@ -794,7 +792,6 @@ func TestGenerateLicenseWithCustomSeparator(t *testing.T) {
 	})
 }
 
-
 func TestCheckLicenseHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockLicenseStore := new(MockLicenseStore)
@@ -802,18 +799,18 @@ func TestCheckLicenseHandler(t *testing.T) {
 	mockLogStore := new(MockLogStore)
 
 	mockLogStore.On("CreateLicenseCheckLog", mock.Anything, mock.Anything).Return(nil).Maybe()
-	
+
 	router := gin.New()
 	router.GET("/check", handlers.CheckLicenseHandler(mockLicenseStore, mockProductStore, "", mockLogStore))
 
 	t.Run("ValidLicense_NoRestrictions", func(t *testing.T) {
 		key := "TEST-key123"
 		license := &models.License{
-			ID:        uuid.New(),
-			Key:       key,
-			Type:      models.LicenseTypePerpetual,
-			Features:  []string{},
-			Releases:  []string{},
+			ID:       uuid.New(),
+			Key:      key,
+			Type:     models.LicenseTypePerpetual,
+			Features: []string{},
+			Releases: []string{},
 		}
 		mockLicenseStore.On("GetLicenseByKey", mock.Anything, key).Return(license, nil).Once()
 
@@ -832,9 +829,9 @@ func TestCheckLicenseHandler(t *testing.T) {
 	t.Run("VersionValidation_Allowed", func(t *testing.T) {
 		key := "TEST-ver123"
 		license := &models.License{
-			ID:   uuid.New(),
-			Key:  key,
-			Type: models.LicenseTypePerpetual,
+			ID:       uuid.New(),
+			Key:      key,
+			Type:     models.LicenseTypePerpetual,
 			Releases: []string{"1.0.0", "2.0.0"},
 		}
 		mockLicenseStore.On("GetLicenseByKey", mock.Anything, key).Return(license, nil).Once()
@@ -853,9 +850,9 @@ func TestCheckLicenseHandler(t *testing.T) {
 	t.Run("VersionValidation_NotAllowed", func(t *testing.T) {
 		key := "TEST-verblocked"
 		license := &models.License{
-			ID:   uuid.New(),
-			Key:  key,
-			Type: models.LicenseTypePerpetual,
+			ID:       uuid.New(),
+			Key:      key,
+			Type:     models.LicenseTypePerpetual,
 			Releases: []string{"1.0.0"},
 		}
 		mockLicenseStore.On("GetLicenseByKey", mock.Anything, key).Return(license, nil).Once()
@@ -896,9 +893,9 @@ func TestCheckLicenseHandler(t *testing.T) {
 	t.Run("FeatureValidation_Allowed", func(t *testing.T) {
 		key := "TEST-feat123"
 		license := &models.License{
-			ID:   uuid.New(),
-			Key:  key,
-			Type: models.LicenseTypePerpetual,
+			ID:       uuid.New(),
+			Key:      key,
+			Type:     models.LicenseTypePerpetual,
 			Features: []string{"sso", "premium"},
 		}
 		mockLicenseStore.On("GetLicenseByKey", mock.Anything, key).Return(license, nil).Once()
@@ -917,9 +914,9 @@ func TestCheckLicenseHandler(t *testing.T) {
 	t.Run("FeatureValidation_NotAllowed", func(t *testing.T) {
 		key := "TEST-featblocked"
 		license := &models.License{
-			ID:   uuid.New(),
-			Key:  key,
-			Type: models.LicenseTypePerpetual,
+			ID:       uuid.New(),
+			Key:      key,
+			Type:     models.LicenseTypePerpetual,
 			Features: []string{"basic"},
 		}
 		mockLicenseStore.On("GetLicenseByKey", mock.Anything, key).Return(license, nil).Once()
@@ -1150,7 +1147,7 @@ func TestProductGroupFeatureReleaseHandlers(t *testing.T) {
 	mockLogStore.On("CreateAdminLog", mock.Anything, mock.Anything).Return(nil).Maybe()
 
 	router := gin.New()
-	
+
 	// Register consolidated handlers
 	router.POST("/admin/features", handlers.CreateFeatureHandler(mockFeatureStore, mockLogStore))
 	router.GET("/admin/features", handlers.ListAllFeaturesHandler(mockFeatureStore))
@@ -1237,4 +1234,3 @@ func TestProductGroupFeatureReleaseHandlers(t *testing.T) {
 		mockReleaseStore.AssertExpectations(t)
 	})
 }
-

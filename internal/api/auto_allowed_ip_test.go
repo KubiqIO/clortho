@@ -44,7 +44,7 @@ func TestGenerateLicense_AutoIPInheritance(t *testing.T) {
 		body, _ := json.Marshal(reqBody)
 
 		mockProductStore.On("GetProduct", mock.Anything, productID.String()).Return(product, nil).Once()
-		
+
 		mockLicenseStore.On("CreateLicense", mock.Anything, mock.MatchedBy(func(l *models.License) bool {
 			return l.AutoAllowedIP == true && l.AutoAllowedIPLimit == 5
 		})).Return(nil).Once()
@@ -61,7 +61,7 @@ func TestGenerateLicense_AutoIPInheritance(t *testing.T) {
 	t.Run("Inherit_From_Group_When_Product_Default", func(t *testing.T) {
 		productID := uuid.New()
 		groupID := uuid.New()
-		
+
 		group := &models.ProductGroup{
 			ID:                 groupID,
 			Name:               "Group Settings",
@@ -70,9 +70,9 @@ func TestGenerateLicense_AutoIPInheritance(t *testing.T) {
 		}
 
 		product := &models.Product{
-			ID:             productID,
-			Name:           "Product Inherit",
-			ProductGroupID: &groupID,
+			ID:                 productID,
+			Name:               "Product Inherit",
+			ProductGroupID:     &groupID,
 			AutoAllowedIP:      false,
 			AutoAllowedIPLimit: 0,
 		}
@@ -103,7 +103,7 @@ func TestGenerateLicense_AutoIPInheritance(t *testing.T) {
 	t.Run("Product_Overrides_Group", func(t *testing.T) {
 		productID := uuid.New()
 		groupID := uuid.New()
-		
+
 		group := &models.ProductGroup{
 			ID:                 groupID,
 			Name:               "Group Settings",
@@ -112,9 +112,9 @@ func TestGenerateLicense_AutoIPInheritance(t *testing.T) {
 		}
 
 		product := &models.Product{
-			ID:             productID,
-			Name:           "Product Override",
-			ProductGroupID: &groupID,
+			ID:                 productID,
+			Name:               "Product Override",
+			ProductGroupID:     &groupID,
 			AutoAllowedIP:      true,
 			AutoAllowedIPLimit: 3,
 		}
@@ -144,7 +144,7 @@ func TestGenerateLicense_AutoIPInheritance(t *testing.T) {
 
 	t.Run("Request_Overrides_All", func(t *testing.T) {
 		productID := uuid.New()
-		
+
 		product := &models.Product{
 			ID:                 productID,
 			Name:               "Product Default",
@@ -203,7 +203,7 @@ func TestCheckLicense_AutoIPLogic(t *testing.T) {
 		}
 
 		mockLicenseStore.On("GetLicenseByKey", mock.Anything, key).Return(license, nil).Once()
-		
+
 		mockLicenseStore.On("UpdateLicense", mock.Anything, mock.MatchedBy(func(l *models.License) bool {
 			return len(l.AllowedIPs) == 1 && l.AllowedIPs[0] == ip
 		})).Return(nil).Once()
@@ -219,7 +219,7 @@ func TestCheckLicense_AutoIPLogic(t *testing.T) {
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.True(t, resp["valid"].(bool), "Should be valid after auto-add")
-		
+
 		mockLicenseStore.AssertExpectations(t)
 	})
 
@@ -237,7 +237,7 @@ func TestCheckLicense_AutoIPLogic(t *testing.T) {
 		}
 
 		mockLicenseStore.On("GetLicenseByKey", mock.Anything, key).Return(license, nil).Once()
-		
+
 		req, _ := http.NewRequest("GET", "/check", nil)
 		req.Header.Set("X-License-Key", key)
 		req.Header.Set("X-Forwarded-For", ip)
@@ -250,7 +250,7 @@ func TestCheckLicense_AutoIPLogic(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.False(t, resp["valid"].(bool), "Should be invalid due to IP limit")
 		assert.Equal(t, "IP address not allowed", resp["reason"])
-		
+
 		mockLicenseStore.AssertExpectations(t)
 	})
 
@@ -280,7 +280,7 @@ func TestCheckLicense_AutoIPLogic(t *testing.T) {
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.True(t, resp["valid"].(bool))
-		
+
 		mockLicenseStore.AssertExpectations(t)
 	})
 
@@ -311,7 +311,7 @@ func TestCheckLicense_AutoIPLogic(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.False(t, resp["valid"].(bool))
 		assert.Equal(t, "IP address not allowed", resp["reason"])
-		
+
 		mockLicenseStore.AssertExpectations(t)
 	})
 }
@@ -330,7 +330,7 @@ func TestUpdateLicense_AutoAllowedIP(t *testing.T) {
 	t.Run("Update_AutoAllowedIP_Settings", func(t *testing.T) {
 		key := "TEST-UPDATE-AUTO-IP"
 		licenseID := uuid.New()
-		
+
 		existing := &models.License{
 			ID:                 licenseID,
 			Key:                key,
@@ -342,7 +342,7 @@ func TestUpdateLicense_AutoAllowedIP(t *testing.T) {
 
 		autoAllowedIP := true
 		limit := 10
-		
+
 		reqBody := map[string]interface{}{
 			"auto_allowed_ip":       true,
 			"auto_allowed_ip_limit": 10,
@@ -350,7 +350,7 @@ func TestUpdateLicense_AutoAllowedIP(t *testing.T) {
 		body, _ := json.Marshal(reqBody)
 
 		mockLicenseStore.On("GetLicenseByKey", mock.Anything, key).Return(existing, nil).Once()
-		
+
 		mockLicenseStore.On("UpdateLicense", mock.Anything, mock.MatchedBy(func(l *models.License) bool {
 			return l.ID == licenseID && l.AutoAllowedIP == autoAllowedIP && l.AutoAllowedIPLimit == limit
 		})).Return(nil).Once()
@@ -361,12 +361,12 @@ func TestUpdateLicense_AutoAllowedIP(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp models.License
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.True(t, resp.AutoAllowedIP)
 		assert.Equal(t, 10, resp.AutoAllowedIPLimit)
-		
+
 		mockLicenseStore.AssertExpectations(t)
 	})
 }

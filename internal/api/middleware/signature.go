@@ -53,11 +53,11 @@ func ResponseSigningMiddleware(privateKeyBase64 string) gin.HandlerFunc {
 
 		timestamp := time.Now().UTC().Format(time.RFC3339)
 		body := w.body.Bytes()
-		
+
 		// Signature payload: timestamp + body
 		// Prevents replay of body with old timestamp
 		payload := fmt.Sprintf("%s.%s", timestamp, string(body))
-		
+
 		signature := ed25519.Sign(privateKey, []byte(payload))
 		signatureBase64 := base64.StdEncoding.EncodeToString(signature)
 

@@ -18,13 +18,13 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"crypto/ed25519"
-	"encoding/base64"
-	"fmt"
 	"clortho/internal/config"
 	"clortho/internal/database"
 	"clortho/internal/models"
 	"clortho/internal/store"
+	"crypto/ed25519"
+	"encoding/base64"
+	"fmt"
 )
 
 func TestLicenseLifecycle(t *testing.T) {
@@ -64,7 +64,7 @@ func TestLicenseLifecycle(t *testing.T) {
 
 	cfg := config.Config{
 		DatabaseURL:               connStr,
-		AdminSecret:                 "test-secret",
+		AdminSecret:               "test-secret",
 		ResponseSigningPrivateKey: privKeyBase64,
 		RateLimitAdmin: config.RateLimitConfig{
 			Enabled: false,
@@ -125,7 +125,7 @@ func TestLicenseLifecycle(t *testing.T) {
 
 		require.Equal(t, http.StatusCreated, w.Code)
 	}
-	
+
 	// List products to get the ID
 	{
 		req, _ := http.NewRequest("GET", "/admin/products", nil)
@@ -133,7 +133,7 @@ func TestLicenseLifecycle(t *testing.T) {
 		w := httptest.NewRecorder()
 		server.Router.ServeHTTP(w, req)
 		require.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp models.PaginatedList[models.Product]
 		err = json.Unmarshal(w.Body.Bytes(), &resp)
 		require.NoError(t, err)
@@ -183,9 +183,9 @@ func TestLicenseLifecycle(t *testing.T) {
 	var licenseKey string
 	{
 		reqBody := map[string]interface{}{
-			"product_id":    productID,
-			"type":          "perpetual",
-			"feature_codes": []string{"INT-FEAT"},
+			"product_id":       productID,
+			"type":             "perpetual",
+			"feature_codes":    []string{"INT-FEAT"},
 			"release_versions": []string{"1.0.0"},
 			"owner_id":         "test-admin",
 		}
@@ -202,7 +202,7 @@ func TestLicenseLifecycle(t *testing.T) {
 		licenseKey = resp["key"].(string)
 		require.NotEmpty(t, licenseKey)
 		assert.Contains(t, licenseKey, "TEST") // Prefix we set
-		
+
 		features := resp["features"].([]interface{})
 		require.Len(t, features, 1)
 		assert.Equal(t, "INT-FEAT", features[0])
@@ -221,14 +221,14 @@ func TestLicenseLifecycle(t *testing.T) {
 		logger := slog.New(h)
 		slog.SetDefault(logger)
 		// Do not defer here, as it runs at function exit
-		
+
 		req, _ := http.NewRequest("GET", "/check", nil)
 		req.Header.Set("X-License-Key", licenseKey)
 		// Set Client IP
 		clientIP := "10.0.0.1"
 		req.Header.Set("X-Forwarded-For", clientIP)
 		req.RemoteAddr = "127.0.0.1:1234" // Required for Gin to check trusted proxies
-		
+
 		w := httptest.NewRecorder()
 		server.Router.ServeHTTP(w, req)
 
@@ -236,7 +236,7 @@ func TestLicenseLifecycle(t *testing.T) {
 		var resp map[string]interface{}
 		err = json.Unmarshal(w.Body.Bytes(), &resp)
 		require.NoError(t, err)
-		
+
 		valid, ok := resp["valid"].(bool)
 		require.True(t, ok)
 		assert.True(t, valid, "License should be valid")
@@ -294,7 +294,7 @@ func TestLicenseLifecycle(t *testing.T) {
 		var resp map[string]interface{}
 		err = json.Unmarshal(w.Body.Bytes(), &resp)
 		require.NoError(t, err)
-		
+
 		valid, ok := resp["valid"].(bool)
 		require.True(t, ok)
 		assert.False(t, valid, "License should be invalid")
@@ -340,7 +340,7 @@ func TestLicenseLifecycle(t *testing.T) {
 		assert.NotEmpty(t, resp.Items, "Should have license check logs")
 		// We expect at least 2 logs (valid check and revoked check)
 		assert.GreaterOrEqual(t, len(resp.Items), 2)
-		
+
 		// Verify Admin Logs
 		reqAdmin, _ := http.NewRequest("GET", "/admin/logs/admin-actions?actor=test-admin", nil)
 		reqAdmin.Header.Set("Authorization", authHeader)

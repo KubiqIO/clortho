@@ -11,7 +11,6 @@ import (
 	"clortho/internal/models"
 )
 
-
 // ParseExpirationDuration parses a duration string like "3d", "2w", "1mo", "1y"
 // and returns the expiration time from now.
 func ParseExpirationDuration(d string) (time.Time, error) {
@@ -67,7 +66,7 @@ func ParsePaginationParams(c *gin.Context) models.PaginationParams {
 	if err != nil || limit < 1 {
 		limit = 10
 	}
-	
+
 	// Enforce a sensible max limit to prevent abuse
 	if limit > 1000 {
 		limit = 1000

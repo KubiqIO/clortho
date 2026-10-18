@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"sync"
 
-
 	"clortho/internal/config"
 
 	"github.com/gin-gonic/gin"

@@ -2,9 +2,9 @@ package api
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 	"time"
-	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -115,10 +115,10 @@ func TestOwnerFiltering(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, products, 3)
 	})
-	
+
 	// Test License Filtering
 	ls := store.NewPostgresLicenseStore(pool)
-	
+
 	l1 := &models.License{
 		ID:        uuid.New(),
 		Key:       "KEY-1234",
@@ -129,7 +129,7 @@ func TestOwnerFiltering(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	
+
 	l2 := &models.License{
 		ID:        uuid.New(),
 		Key:       "KEY-5678",
@@ -150,7 +150,7 @@ func TestOwnerFiltering(t *testing.T) {
 		assert.Len(t, licenses, 1)
 		assert.Equal(t, l1.ID, licenses[0].ID)
 	})
-	
+
 	t.Run("Filter Licenses by Owner 2", func(t *testing.T) {
 		licenses, _, err := ls.ListLicenses(ctx, &owner2, models.PaginationParams{})
 		require.NoError(t, err)

@@ -133,7 +133,6 @@ func TestRevokeAndPurgeLicense(t *testing.T) {
 			return l.Key == key && l.Status == models.LicenseStatusActive
 		})).Return(nil)
 
-
 		req, _ := http.NewRequest("PUT", "/admin/keys", bytes.NewBuffer(body))
 		req.Header.Set("X-License-Key", key)
 		w := httptest.NewRecorder()

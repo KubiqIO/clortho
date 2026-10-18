@@ -11,9 +11,9 @@ import (
 )
 
 type Server struct {
-	Router            *gin.Engine
-	DB                *pgxpool.Pool
-	Config            config.Config
+	Router *gin.Engine
+	DB     *pgxpool.Pool
+	Config config.Config
 
 	LicenseStore      store.LicenseStore
 	ProductStore      store.ProductStore
@@ -90,7 +90,6 @@ func (s *Server) setupRoutes() {
 		authorized.GET("/admin/product-groups/:id", handlers.GetProductGroupHandler(s.ProductGroupStore))
 		authorized.PUT("/admin/product-groups/:id", handlers.UpdateProductGroupHandler(s.ProductGroupStore, s.LogStore))
 		authorized.DELETE("/admin/product-groups/:id", handlers.DeleteProductGroupHandler(s.ProductGroupStore, s.LogStore))
-
 
 		// Feature Management
 		authorized.POST("/admin/features", handlers.CreateFeatureHandler(s.FeatureStore, s.LogStore))

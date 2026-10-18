@@ -53,7 +53,7 @@ func (s *PostgresFeatureStore) ListAllFeatures(ctx context.Context, ownerID *str
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 
@@ -112,7 +112,7 @@ func (s *PostgresFeatureStore) ListGlobalFeatures(ctx context.Context, ownerID *
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 
@@ -171,7 +171,7 @@ func (s *PostgresFeatureStore) ListFeaturesByProduct(ctx context.Context, produc
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 
@@ -230,7 +230,7 @@ func (s *PostgresFeatureStore) ListFeaturesByProductGroup(ctx context.Context, p
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 

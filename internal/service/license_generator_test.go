@@ -31,7 +31,6 @@ func TestParseCharset(t *testing.T) {
 		}
 	}
 
-
 	got, err := ParseCharset("")
 	if err != nil {
 		t.Errorf("ParseCharset(\"\") unexpected error: %v", err)
@@ -67,13 +66,11 @@ func TestGenerateLicenseKey(t *testing.T) {
 		t.Errorf("expected length 13, got %d", len(key3))
 	}
 
-
 	charset := "A"
 	key4, _ := GenerateLicenseKey("", 10, "", charset)
 	if key4 != "AAAAAAAAAA" {
 		t.Errorf("expected all As, got %s", key4)
 	}
-
 
 	parsed, _ := ParseCharset("1-1")
 	key5, _ := GenerateLicenseKey("", 5, "", parsed)

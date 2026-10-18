@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"github.com/google/uuid"
 	"path/filepath"
 
 	"clortho/internal/database"
@@ -54,7 +54,7 @@ func TestGetDashboardStats(t *testing.T) {
 	pool, err := database.New(ctx, connStr)
 	require.NoError(t, err)
 	defer pool.Close()
-	
+
 	statsStore := NewPostgresStatsStore(pool)
 	productStore := NewPostgresProductStore(pool)
 	licenseStore := NewPostgresLicenseStore(pool)
@@ -68,7 +68,7 @@ func TestGetDashboardStats(t *testing.T) {
 	// P1: New (Default CreatedAt is 0, so needs setting or assumed Now)
 	p1 := &models.Product{ID: uuid.New(), OwnerID: &owner1, Name: "P1", CreatedAt: time.Now(), UpdatedAt: time.Now()}
 	require.NoError(t, productStore.CreateProduct(ctx, p1))
-	
+
 	// P2: Old (>30d ago)
 	p2 := &models.Product{ID: uuid.New(), OwnerID: &owner2, Name: "P2", CreatedAt: time.Now().Add(-40 * 24 * time.Hour), UpdatedAt: time.Now()}
 	require.NoError(t, productStore.CreateProduct(ctx, p2))
@@ -76,32 +76,32 @@ func TestGetDashboardStats(t *testing.T) {
 	// Create Licenses
 	// L1: New
 	l1 := &models.License{
-        ID: uuid.New(), Key: "KEY1", OwnerID: &owner1, ProductID: p1.ID, Type: models.LicenseTypePerpetual, Status: models.LicenseStatusActive,
-        CreatedAt: time.Now(), UpdatedAt: time.Now(),
-    }
+		ID: uuid.New(), Key: "KEY1", OwnerID: &owner1, ProductID: p1.ID, Type: models.LicenseTypePerpetual, Status: models.LicenseStatusActive,
+		CreatedAt: time.Now(), UpdatedAt: time.Now(),
+	}
 	require.NoError(t, licenseStore.CreateLicense(ctx, l1))
 
 	// L2: Old (>30d ago)
 	l2 := &models.License{
-        ID: uuid.New(), Key: "KEY2", OwnerID: &owner2, ProductID: p2.ID, Type: models.LicenseTypePerpetual, Status: models.LicenseStatusActive,
-        CreatedAt: time.Now().Add(-40 * 24 * time.Hour), UpdatedAt: time.Now(),
-    }
+		ID: uuid.New(), Key: "KEY2", OwnerID: &owner2, ProductID: p2.ID, Type: models.LicenseTypePerpetual, Status: models.LicenseStatusActive,
+		CreatedAt: time.Now().Add(-40 * 24 * time.Hour), UpdatedAt: time.Now(),
+	}
 	require.NoError(t, licenseStore.CreateLicense(ctx, l2))
-	
+
 	// Create Logs
 	now := time.Now()
-    
-    // Check 1: Recent (Last 1 hour)
+
+	// Check 1: Recent (Last 1 hour)
 	chk1 := &models.LicenseCheckLog{ProductID: &p1.ID, LicenseKey: "KEY1", StatusCode: 200}
 	require.NoError(t, logStore.CreateLicenseCheckLog(ctx, chk1)) // CreatedAt = Now
 
-    // Check 2: Prev 24h Window (30 hours ago)
+	// Check 2: Prev 24h Window (30 hours ago)
 	chk2 := &models.LicenseCheckLog{ProductID: &p1.ID, LicenseKey: "KEY1", StatusCode: 200}
 	require.NoError(t, logStore.CreateLicenseCheckLog(ctx, chk2))
 	_, err = pool.Exec(ctx, "UPDATE license_check_logs SET created_at = $1 WHERE id = $2", now.Add(-30*time.Hour), chk2.ID)
 	require.NoError(t, err)
 
-    // Check 3: Old (> 48h ago)
+	// Check 3: Old (> 48h ago)
 	chk3 := &models.LicenseCheckLog{ProductID: &p2.ID, LicenseKey: "KEY2", StatusCode: 200}
 	require.NoError(t, logStore.CreateLicenseCheckLog(ctx, chk3))
 	_, err = pool.Exec(ctx, "UPDATE license_check_logs SET created_at = $1 WHERE id = $2", now.Add(-60*time.Hour), chk3.ID)
@@ -112,12 +112,12 @@ func TestGetDashboardStats(t *testing.T) {
 	err1 := &models.LicenseCheckLog{ProductID: &p1.ID, LicenseKey: "KEY1", StatusCode: 500}
 	require.NoError(t, logStore.CreateLicenseCheckLog(ctx, err1))
 
-	// Error 2: Previous 24h (30 hours ago) for Owner 1. 
+	// Error 2: Previous 24h (30 hours ago) for Owner 1.
 	// This one has status 200 but has a "reason" in payload, should count as error.
 	err2 := &models.LicenseCheckLog{
-		ProductID: &p1.ID, 
-		LicenseKey: "KEY1", 
-		StatusCode: 200,
+		ProductID:       &p1.ID,
+		LicenseKey:      "KEY1",
+		StatusCode:      200,
 		ResponsePayload: map[string]interface{}{"reason": "expired"},
 	}
 	require.NoError(t, logStore.CreateLicenseCheckLog(ctx, err2))
@@ -133,7 +133,7 @@ func TestGetDashboardStats(t *testing.T) {
 	// Create 3 logs to verify Recent Logs list
 	log1 := &models.AdminLog{Action: "create_prod_1", EntityType: "product", OwnerID: &owner1}
 	require.NoError(t, logStore.CreateAdminLog(ctx, log1))
-	
+
 	log2 := &models.AdminLog{Action: "create_prod_2", EntityType: "product", OwnerID: &owner2}
 	require.NoError(t, logStore.CreateAdminLog(ctx, log2))
 
@@ -143,9 +143,8 @@ func TestGetDashboardStats(t *testing.T) {
 	_, err = pool.Exec(ctx, "UPDATE admin_logs SET created_at = $1 WHERE id = $2", now.Add(-10*time.Hour), log3.ID)
 	require.NoError(t, err)
 
-    // And one more recent one
-    require.NoError(t, logStore.CreateAdminLog(ctx, &models.AdminLog{Action: "act", EntityType: "prod", OwnerID: &owner1}))
-
+	// And one more recent one
+	require.NoError(t, logStore.CreateAdminLog(ctx, &models.AdminLog{Action: "act", EntityType: "prod", OwnerID: &owner1}))
 
 	// Test Cases
 
@@ -168,12 +167,12 @@ func TestGetDashboardStats(t *testing.T) {
 	assert.Equal(t, 1, stats.TotalProductsChange)
 	assert.Equal(t, 2, stats.TotalLicenses)
 	assert.Equal(t, 1, stats.TotalLicensesChange)
-	assert.Equal(t, 6, stats.TotalLicenseChecks) 
+	assert.Equal(t, 6, stats.TotalLicenseChecks)
 	// Checks Last 24h: chk1, err1, chk4 = 3
 	// Checks Prev 24h: chk2, err2 = 2
 	// Change: 3 - 2 = 1
 	assert.Equal(t, 1, stats.TotalLicenseChecksChange)
-	
+
 	// Verify Error Stats
 	assert.Equal(t, 2, stats.TotalLicenseCheckErrors)
 	assert.Equal(t, 0, stats.TotalLicenseCheckErrorsChange) // 1 (recent) - 1 (prev) = 0
@@ -181,9 +180,9 @@ func TestGetDashboardStats(t *testing.T) {
 	assert.Len(t, stats.RecentAdminLogs, 3) // We created 4 admin logs, but it limits to 3
 	// Check order (descending by created at)
 	// owner1/owner2 yesterday are newer than owner1-old
-	// Note: owner1-yest and owner2-yest have same timestamp (yesterday). Order is non-deterministic between them unless ID sorts or insertion order. 
-	// But they should be first 2. 
-	
+	// Note: owner1-yest and owner2-yest have same timestamp (yesterday). Order is non-deterministic between them unless ID sorts or insertion order.
+	// But they should be first 2.
+
 	// 2. Filter by Owner1
 	// Owner 1 has P1.
 	// Checks for P1:

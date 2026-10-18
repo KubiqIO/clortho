@@ -15,27 +15,27 @@ import (
 )
 
 type createProductGroupRequest struct {
-	Name             string `json:"name" binding:"required"`
-	Description      string `json:"description"`
-	LicensePrefix    string `json:"license_prefix"`
-	LicenseSeparator string `json:"license_separator"`
-	LicenseCharset   string `json:"license_charset"`
-	LicenseLength    int    `json:"license_length"`
-	AutoAllowedIP    bool   `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit int `json:"auto_allowed_ip_limit"`
-	OwnerID          *string `json:"owner_id"`
+	Name               string  `json:"name" binding:"required"`
+	Description        string  `json:"description"`
+	LicensePrefix      string  `json:"license_prefix"`
+	LicenseSeparator   string  `json:"license_separator"`
+	LicenseCharset     string  `json:"license_charset"`
+	LicenseLength      int     `json:"license_length"`
+	AutoAllowedIP      bool    `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit int     `json:"auto_allowed_ip_limit"`
+	OwnerID            *string `json:"owner_id"`
 }
 
 type updateProductGroupRequest struct {
-	Name             string `json:"name"`
-	Description      string `json:"description"`
-	LicensePrefix    string `json:"license_prefix"`
-	LicenseSeparator string `json:"license_separator"`
-	LicenseCharset   string `json:"license_charset"`
-	LicenseLength    *int   `json:"license_length"`
-	AutoAllowedIP    *bool  `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit *int `json:"auto_allowed_ip_limit"`
-	OwnerID          *string `json:"owner_id"`
+	Name               string  `json:"name"`
+	Description        string  `json:"description"`
+	LicensePrefix      string  `json:"license_prefix"`
+	LicenseSeparator   string  `json:"license_separator"`
+	LicenseCharset     string  `json:"license_charset"`
+	LicenseLength      *int    `json:"license_length"`
+	AutoAllowedIP      *bool   `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit *int    `json:"auto_allowed_ip_limit"`
+	OwnerID            *string `json:"owner_id"`
 }
 
 // ListProductGroupsHandler handles GET /admin/product-groups
@@ -87,18 +87,18 @@ func CreateProductGroupHandler(productGroupStore store.ProductGroupStore, logSto
 		}
 
 		group := &models.ProductGroup{
-			ID:               uuid.New(),
-			OwnerID:          req.OwnerID,
-			Name:             req.Name,
-			Description:      req.Description,
-			LicensePrefix:    req.LicensePrefix,
-			LicenseSeparator: req.LicenseSeparator,
-			LicenseCharset:   req.LicenseCharset,
-			LicenseLength:    req.LicenseLength,
-			AutoAllowedIP:    req.AutoAllowedIP,
+			ID:                 uuid.New(),
+			OwnerID:            req.OwnerID,
+			Name:               req.Name,
+			Description:        req.Description,
+			LicensePrefix:      req.LicensePrefix,
+			LicenseSeparator:   req.LicenseSeparator,
+			LicenseCharset:     req.LicenseCharset,
+			LicenseLength:      req.LicenseLength,
+			AutoAllowedIP:      req.AutoAllowedIP,
 			AutoAllowedIPLimit: req.AutoAllowedIPLimit,
-			CreatedAt:        time.Now(),
-			UpdatedAt:        time.Now(),
+			CreatedAt:          time.Now(),
+			UpdatedAt:          time.Now(),
 		}
 
 		// Audit Log
@@ -107,10 +107,10 @@ func CreateProductGroupHandler(productGroupStore store.ProductGroupStore, logSto
 		json.Unmarshal(dt, &details)
 
 		logEntry := &models.AdminLog{
-			Action:     "CREATE_PRODUCT_GROUP",
-			OwnerID:    group.OwnerID,
-			Details:    details,
-			CreatedAt:  time.Now(),
+			Action:    "CREATE_PRODUCT_GROUP",
+			OwnerID:   group.OwnerID,
+			Details:   details,
+			CreatedAt: time.Now(),
 		}
 		service.AsyncLogAdminAction(c.Request.Context(), logStore, logEntry)
 
@@ -193,11 +193,11 @@ func UpdateProductGroupHandler(productGroupStore store.ProductGroupStore, logSto
 		json.Unmarshal(dt, &details)
 
 		logEntry := &models.AdminLog{
-			Action:     "UPDATE_PRODUCT_GROUP",
-			EntityID:   &group.ID,
-			OwnerID:    group.OwnerID,
-			Details:    details,
-			CreatedAt:  time.Now(),
+			Action:    "UPDATE_PRODUCT_GROUP",
+			EntityID:  &group.ID,
+			OwnerID:   group.OwnerID,
+			Details:   details,
+			CreatedAt: time.Now(),
 		}
 		service.AsyncLogAdminAction(c.Request.Context(), logStore, logEntry)
 

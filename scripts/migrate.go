@@ -31,7 +31,7 @@ func main() {
 		}
 		databaseURL = cfg.DatabaseURL
 	}
-	
+
 	if databaseURL == "" {
 		log.Fatal("database-url is required (via flag or config.yaml)")
 	}

@@ -23,7 +23,6 @@ func AsyncLogAdminAction(ctx context.Context, logStore store.LogStore, entry *mo
 	}()
 }
 
-
 func AsyncLogLicenseCheck(ctx context.Context, logStore store.LogStore, entry *models.LicenseCheckLog, valid bool, reason string) {
 	slog.Info("License Check",
 		"key", entry.LicenseKey,

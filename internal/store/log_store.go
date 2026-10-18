@@ -105,7 +105,7 @@ func (s *PostgresLogStore) GetLicenseCheckLogsByLicenseKey(ctx context.Context, 
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 
@@ -178,7 +178,7 @@ func (s *PostgresLogStore) GetLicenseCheckLogsByProductID(ctx context.Context, p
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 
@@ -257,7 +257,7 @@ func (s *PostgresLogStore) GetLicenseCheckLogsByProductGroupID(ctx context.Conte
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 
@@ -328,7 +328,7 @@ func (s *PostgresLogStore) ListAdminLogs(ctx context.Context, ownerID *string, p
 		page = 1
 	}
 	offset := (page - 1) * limit
-	
+
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
 	args = append(args, limit, offset)
 

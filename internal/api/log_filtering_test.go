@@ -54,8 +54,8 @@ func TestLogFiltering(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.Config{
-		DatabaseURL:               connStr,
-		AdminSecret:                 "test-secret",
+		DatabaseURL: connStr,
+		AdminSecret: "test-secret",
 		RateLimitAdmin: config.RateLimitConfig{
 			Enabled: false,
 		},
@@ -94,8 +94,8 @@ func TestLogFiltering(t *testing.T) {
 	productID := ""
 	{
 		reqBody := map[string]interface{}{
-			"name":           "Log Test Product",
-			"owner_id":       "test-admin",
+			"name":     "Log Test Product",
+			"owner_id": "test-admin",
 		}
 		body, _ := json.Marshal(reqBody)
 		req, _ := http.NewRequest("POST", "/admin/products", bytes.NewBuffer(body))
@@ -103,7 +103,7 @@ func TestLogFiltering(t *testing.T) {
 		w := httptest.NewRecorder()
 		server.Router.ServeHTTP(w, req)
 		require.Equal(t, http.StatusCreated, w.Code)
-		
+
 		var resp models.PaginatedList[models.Product]
 		reqList, _ := http.NewRequest("GET", "/admin/products", nil)
 		reqList.Header.Set("Authorization", authHeader)
@@ -135,7 +135,7 @@ func TestLogFiltering(t *testing.T) {
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		licenseKey = resp["key"].(string)
-		
+
 		// Extract ID from response
 		idStr, ok := resp["id"].(string)
 		if !ok {
@@ -155,46 +155,45 @@ func TestLogFiltering(t *testing.T) {
 
 	// Log 1: Success 200
 	log1 := &models.LicenseCheckLog{
-		ProductID:      &prodUUID,
-		LicenseID:      &licenseID,
-		LicenseKey:     licenseKey,
-		RequestPayload: map[string]interface{}{"foo": "bar"},
+		ProductID:       &prodUUID,
+		LicenseID:       &licenseID,
+		LicenseKey:      licenseKey,
+		RequestPayload:  map[string]interface{}{"foo": "bar"},
 		ResponsePayload: map[string]interface{}{"valid": true},
-		IPAddress:      "1.2.3.4",
-		UserAgent:      "test-agent",
-		StatusCode:     200,
+		IPAddress:       "1.2.3.4",
+		UserAgent:       "test-agent",
+		StatusCode:      200,
 	}
 	err = logStore.CreateLicenseCheckLog(ctx, log1)
 	require.NoError(t, err)
 
 	// Log 2: Not Found 404
 	log2 := &models.LicenseCheckLog{
-		ProductID:      &prodUUID,
-		LicenseID:      &licenseID,
-		LicenseKey:     licenseKey,
-		RequestPayload: map[string]interface{}{"foo": "baz"},
+		ProductID:       &prodUUID,
+		LicenseID:       &licenseID,
+		LicenseKey:      licenseKey,
+		RequestPayload:  map[string]interface{}{"foo": "baz"},
 		ResponsePayload: map[string]interface{}{"error": "not found"},
-		IPAddress:      "1.2.3.4",
-		UserAgent:      "test-agent",
-		StatusCode:     404,
+		IPAddress:       "1.2.3.4",
+		UserAgent:       "test-agent",
+		StatusCode:      404,
 	}
 	err = logStore.CreateLicenseCheckLog(ctx, log2)
 	require.NoError(t, err)
 
 	// Log 3: Server Error 500
 	log3 := &models.LicenseCheckLog{
-		ProductID:      &prodUUID,
-		LicenseID:      &licenseID,
-		LicenseKey:     licenseKey,
-		RequestPayload: map[string]interface{}{"foo": "qux"},
+		ProductID:       &prodUUID,
+		LicenseID:       &licenseID,
+		LicenseKey:      licenseKey,
+		RequestPayload:  map[string]interface{}{"foo": "qux"},
 		ResponsePayload: map[string]interface{}{"error": "server error"},
-		IPAddress:      "1.2.3.4",
-		UserAgent:      "test-agent",
-		StatusCode:     500,
+		IPAddress:       "1.2.3.4",
+		UserAgent:       "test-agent",
+		StatusCode:      500,
 	}
 	err = logStore.CreateLicenseCheckLog(ctx, log3)
 	require.NoError(t, err)
-
 
 	// 4. Verify Filtering
 	// Case 1: Filter by status 200
@@ -255,7 +254,7 @@ func TestLogFiltering(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, resp.Items, 3)
 	}
-	
+
 	// Case 5: Filter by Product ID and Status
 	{
 		req, _ := http.NewRequest("GET", "/admin/logs/license-checks?product_id="+productID+"&status_code=500", nil)

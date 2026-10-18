@@ -18,11 +18,11 @@ func TestResponseSigningMiddleware(t *testing.T) {
 	assert.NoError(t, err)
 
 	privBase64 := base64.StdEncoding.EncodeToString(priv)
-	
+
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(ResponseSigningMiddleware(privBase64))
-	
+
 	r.GET("/test", func(c *gin.Context) {
 		c.String(http.StatusOK, "hello world")
 	})
@@ -52,7 +52,7 @@ func TestResponseSigningMiddleware(t *testing.T) {
 func TestResponseSigningMiddleware_NoKey(t *testing.T) {
 	r := gin.New()
 	r.Use(ResponseSigningMiddleware(""))
-	
+
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
@@ -67,7 +67,7 @@ func TestResponseSigningMiddleware_NoKey(t *testing.T) {
 func TestResponseSigningMiddleware_InvalidKey(t *testing.T) {
 	r := gin.New()
 	r.Use(ResponseSigningMiddleware("invalid-base64"))
-	
+
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})

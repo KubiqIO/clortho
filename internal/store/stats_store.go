@@ -151,7 +151,7 @@ func (s *PostgresStatsStore) GetDashboardStats(ctx context.Context, ownerID *str
 		checks24hArgs = append(checks24hArgs, ownerID)
 		argIdx++
 	}
-	
+
 	checks24hQuery += " WHERE " + checks24hWhere[0]
 	for i := 1; i < len(checks24hWhere); i++ {
 		checks24hQuery += " AND " + checks24hWhere[i]
@@ -243,7 +243,7 @@ func (s *PostgresStatsStore) GetDashboardStats(ctx context.Context, ownerID *str
 		errors24hArgs = append(errors24hArgs, ownerID)
 		argIdx++
 	}
-	
+
 	errors24hQuery += " WHERE " + errors24hWhere[0]
 	for i := 1; i < len(errors24hWhere); i++ {
 		errors24hQuery += " AND " + errors24hWhere[i]

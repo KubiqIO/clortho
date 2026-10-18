@@ -52,7 +52,7 @@ func TestSeparateRateLimits(t *testing.T) {
 	pool, err := database.New(ctx, connStr)
 	require.NoError(t, err)
 	defer pool.Close()
-	
+
 	// Generate keys
 	_, privKey, _ := ed25519.GenerateKey(nil)
 	privKeyBase64 := base64.StdEncoding.EncodeToString(privKey)
@@ -81,7 +81,7 @@ func TestSeparateRateLimits(t *testing.T) {
 	fs := store.NewPostgresFeatureStore(pool)
 	logs := store.NewPostgresLogStore(pool)
 	statsStore := store.NewPostgresStatsStore(pool)
-	
+
 	server := NewServer(cfg, pool, ls, ps, pgs, rs, fs, logs, statsStore)
 
 	// Test 1: Admin Rate Limit Exhaustion
@@ -120,7 +120,7 @@ func TestSeparateRateLimits(t *testing.T) {
 			require.NotEqual(t, http.StatusTooManyRequests, w.Code, "Check API should still allow requests")
 		}
 	})
-	
+
 	// Test 3: Check API Exhaustion
 	t.Run("Check API Exhaustion", func(t *testing.T) {
 		// config: rate 10, burst 10.
@@ -132,7 +132,7 @@ func TestSeparateRateLimits(t *testing.T) {
 			server.Router.ServeHTTP(w, req)
 			require.NotEqual(t, http.StatusTooManyRequests, w.Code)
 		}
-		
+
 		// Next one should fail
 		req, _ := http.NewRequest("GET", "/check", nil)
 		w := httptest.NewRecorder()

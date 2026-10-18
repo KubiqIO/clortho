@@ -139,4 +139,3 @@ func (c *Config) ensureAdminSecret() error {
 
 	return nil
 }
-

@@ -40,7 +40,7 @@ func TestParseExpirationDuration(t *testing.T) {
 				t.Errorf("ParseExpirationDuration() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-				if !tt.wantErr {
+			if !tt.wantErr {
 				now := time.Now()
 				var expected time.Time
 				switch tt.param {
@@ -96,7 +96,6 @@ func TestGenerateLicenseHandler_Duration(t *testing.T) {
 			ID:            pID,
 			LicensePrefix: "DEFAULT",
 		}, nil)
-
 
 		mockLicenseStore.On("CreateLicense", mock.Anything, mock.MatchedBy(func(l *models.License) bool {
 			if l.ExpiresAt == nil {
@@ -169,8 +168,6 @@ func TestCheckLicenseHandler_ReturnsExpiration(t *testing.T) {
 
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
-
-
 
 		expStr, ok := resp["expires_at"].(string)
 		assert.True(t, ok)
