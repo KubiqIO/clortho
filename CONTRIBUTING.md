@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Clortho! This document provides g
 
 ### Prerequisites
 
-- Go 1.25 or higher
+- Go 1.26.9 or higher
 - PostgreSQL database
 - Docker (optional, for running tests)
 

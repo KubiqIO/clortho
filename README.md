@@ -26,7 +26,7 @@ Clortho is an API server for managing license keys and subscriptions. It handles
 
 ## Tech Stack
 
-- **Language**: Go (Golang) 1.25+
+- **Language**: Go (Golang) 1.26.9+
 - **Framework**: Gin Web Framework
 - **Database**: PostgreSQL
 - **Driver**: pgx (with connection pooling)
@@ -88,7 +88,7 @@ clortho/
 
 ### Prerequisites
 
-- Go 1.25 or higher
+- Go 1.26.9 or higher
 - PostgreSQL database
 
 ### Configuration
