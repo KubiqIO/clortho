@@ -22,21 +22,22 @@ type ProductGroup struct {
 }
 
 type Product struct {
-	ID                 uuid.UUID   `json:"id"`
-	OwnerID            *string     `json:"owner_id,omitempty"`
-	Name               string      `json:"name"`
-	Description        string      `json:"description,omitempty"`
-	LicensePrefix      string      `json:"license_prefix,omitempty"`
-	LicenseSeparator   string      `json:"license_separator,omitempty"`
-	LicenseCharset     string      `json:"license_charset,omitempty"`
-	LicenseLength      int         `json:"license_length,omitempty"`
-	LicenseType        LicenseType `json:"license_type,omitempty"`
-	LicenseDuration    string      `json:"license_duration,omitempty"`
-	AutoAllowedIP      bool        `json:"auto_allowed_ip,omitempty"`
-	AutoAllowedIPLimit int         `json:"auto_allowed_ip_limit,omitempty"`
-	ProductGroupID     *uuid.UUID  `json:"product_group_id,omitempty"`
-	CreatedAt          time.Time   `json:"created_at"`
-	UpdatedAt          time.Time   `json:"updated_at"`
+	ID                     uuid.UUID   `json:"id"`
+	OwnerID                *string     `json:"owner_id,omitempty"`
+	Name                   string      `json:"name"`
+	Description            string      `json:"description,omitempty"`
+	LicensePrefix          string      `json:"license_prefix,omitempty"`
+	LicenseSeparator       string      `json:"license_separator,omitempty"`
+	LicenseCharset         string      `json:"license_charset,omitempty"`
+	LicenseLength          int         `json:"license_length,omitempty"`
+	LicenseType            LicenseType `json:"license_type,omitempty"`
+	LicenseDuration        string      `json:"license_duration,omitempty"`
+	IPRestrictionsDisabled bool        `json:"ip_restrictions_disabled"`
+	AutoAllowedIP          bool        `json:"auto_allowed_ip,omitempty"`
+	AutoAllowedIPLimit     int         `json:"auto_allowed_ip_limit,omitempty"`
+	ProductGroupID         *uuid.UUID  `json:"product_group_id,omitempty"`
+	CreatedAt              time.Time   `json:"created_at"`
+	UpdatedAt              time.Time   `json:"updated_at"`
 }
 
 type Feature struct {
@@ -76,21 +77,22 @@ const (
 )
 
 type License struct {
-	ID                 uuid.UUID     `json:"id"`
-	Key                string        `json:"key"`
-	OwnerID            *string       `json:"owner_id,omitempty"`
-	Type               LicenseType   `json:"type"`
-	ProductID          uuid.UUID     `json:"product_id"`
-	AllowedIPs         []string      `json:"allowed_ips,omitempty"`
-	AllowedNetworks    []string      `json:"allowed_networks,omitempty"`
-	ExpiresAt          *time.Time    `json:"expires_at,omitempty"`
-	AutoAllowedIP      bool          `json:"auto_allowed_ip,omitempty"`
-	AutoAllowedIPLimit int           `json:"auto_allowed_ip_limit,omitempty"`
-	Features           []string      `json:"features,omitempty"`
-	Releases           []string      `json:"releases,omitempty"`
-	Status             LicenseStatus `json:"status"`
-	CreatedAt          time.Time     `json:"created_at"`
-	UpdatedAt          time.Time     `json:"updated_at"`
+	ID                     uuid.UUID     `json:"id"`
+	Key                    string        `json:"key"`
+	OwnerID                *string       `json:"owner_id,omitempty"`
+	Type                   LicenseType   `json:"type"`
+	ProductID              uuid.UUID     `json:"product_id"`
+	AllowedIPs             []string      `json:"allowed_ips,omitempty"`
+	AllowedNetworks        []string      `json:"allowed_networks,omitempty"`
+	ExpiresAt              *time.Time    `json:"expires_at,omitempty"`
+	IPRestrictionsDisabled bool          `json:"ip_restrictions_disabled"`
+	AutoAllowedIP          bool          `json:"auto_allowed_ip,omitempty"`
+	AutoAllowedIPLimit     int           `json:"auto_allowed_ip_limit,omitempty"`
+	Features               []string      `json:"features,omitempty"`
+	Releases               []string      `json:"releases,omitempty"`
+	Status                 LicenseStatus `json:"status"`
+	CreatedAt              time.Time     `json:"created_at"`
+	UpdatedAt              time.Time     `json:"updated_at"`
 }
 
 type LicenseCheckLog struct {

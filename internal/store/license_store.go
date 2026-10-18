@@ -42,9 +42,9 @@ func (s *PostgresLicenseStore) CreateLicense(ctx context.Context, license *model
 
 	query := `
 		INSERT INTO licenses (
-			id, key, owner_id, type, product_id, allowed_ips, allowed_networks, expires_at, created_at, updated_at, status, auto_allowed_ip, auto_allowed_ip_limit
+			id, key, owner_id, type, product_id, allowed_ips, allowed_networks, expires_at, created_at, updated_at, status, auto_allowed_ip, auto_allowed_ip_limit, ip_restrictions_disabled
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 		)
 	`
 	_, err = tx.Exec(ctx, query,
@@ -61,6 +61,7 @@ func (s *PostgresLicenseStore) CreateLicense(ctx context.Context, license *model
 		license.Status,
 		license.AutoAllowedIP,
 		license.AutoAllowedIPLimit,
+		license.IPRestrictionsDisabled,
 	)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -121,7 +122,8 @@ func (s *PostgresLicenseStore) UpdateLicense(ctx context.Context, license *model
 			updated_at = $5,
 			status = $6,
 			auto_allowed_ip = $7,
-			auto_allowed_ip_limit = $8
+			auto_allowed_ip_limit = $8,
+			ip_restrictions_disabled = $10
 		WHERE key = $9
 	`
 	res, err := tx.Exec(ctx, query,
@@ -134,6 +136,7 @@ func (s *PostgresLicenseStore) UpdateLicense(ctx context.Context, license *model
 		license.AutoAllowedIP,
 		license.AutoAllowedIPLimit,
 		license.Key,
+		license.IPRestrictionsDisabled,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update license: %w", err)
@@ -191,7 +194,7 @@ func (s *PostgresLicenseStore) GetLicenseByKey(ctx context.Context, key string) 
 		SELECT 
 			l.id, l.key, l.owner_id, l.type, l.product_id, 
 			l.allowed_ips::text[], l.allowed_networks::text[], 
-			l.expires_at, l.created_at, l.updated_at, l.status, l.auto_allowed_ip, l.auto_allowed_ip_limit,
+			l.expires_at, l.created_at, l.updated_at, l.status, l.auto_allowed_ip, l.auto_allowed_ip_limit, l.ip_restrictions_disabled,
 			COALESCE(array_agg(DISTINCT f.code) FILTER (WHERE f.code IS NOT NULL), '{}')::text[] as features,
 			COALESCE(array_agg(DISTINCT r.version) FILTER (WHERE r.version IS NOT NULL), '{}')::text[] as releases
 		FROM licenses l
@@ -217,6 +220,7 @@ func (s *PostgresLicenseStore) GetLicenseByKey(ctx context.Context, key string) 
 		&l.Status,
 		&l.AutoAllowedIP,
 		&l.AutoAllowedIPLimit,
+		&l.IPRestrictionsDisabled,
 		&l.Features,
 		&l.Releases,
 	)
@@ -247,7 +251,7 @@ func (s *PostgresLicenseStore) GetLicense(ctx context.Context, id string) (*mode
 		SELECT 
 			l.id, l.key, l.owner_id, l.type, l.product_id, 
 			l.allowed_ips::text[], l.allowed_networks::text[], 
-			l.expires_at, l.created_at, l.updated_at, l.status, l.auto_allowed_ip, l.auto_allowed_ip_limit,
+			l.expires_at, l.created_at, l.updated_at, l.status, l.auto_allowed_ip, l.auto_allowed_ip_limit, l.ip_restrictions_disabled,
 			COALESCE(array_agg(DISTINCT f.code) FILTER (WHERE f.code IS NOT NULL), '{}')::text[] as features,
 			COALESCE(array_agg(DISTINCT r.version) FILTER (WHERE r.version IS NOT NULL), '{}')::text[] as releases
 		FROM licenses l
@@ -273,6 +277,7 @@ func (s *PostgresLicenseStore) GetLicense(ctx context.Context, id string) (*mode
 		&l.Status,
 		&l.AutoAllowedIP,
 		&l.AutoAllowedIPLimit,
+		&l.IPRestrictionsDisabled,
 		&l.Features,
 		&l.Releases,
 	)
@@ -306,7 +311,7 @@ func (s *PostgresLicenseStore) ListLicenses(ctx context.Context, ownerID *string
 		SELECT 
 			l.id, l.key, l.owner_id, l.type, l.product_id, 
 			l.allowed_ips::text[], l.allowed_networks::text[], 
-			l.expires_at, l.created_at, l.updated_at, l.status, l.auto_allowed_ip, l.auto_allowed_ip_limit,
+			l.expires_at, l.created_at, l.updated_at, l.status, l.auto_allowed_ip, l.auto_allowed_ip_limit, l.ip_restrictions_disabled,
 			COALESCE(array_agg(DISTINCT f.code) FILTER (WHERE f.code IS NOT NULL), '{}')::text[] as features,
 			COALESCE(array_agg(DISTINCT r.version) FILTER (WHERE r.version IS NOT NULL), '{}')::text[] as releases
 		FROM licenses l
@@ -360,6 +365,7 @@ func (s *PostgresLicenseStore) ListLicenses(ctx context.Context, ownerID *string
 			&l.Status,
 			&l.AutoAllowedIP,
 			&l.AutoAllowedIPLimit,
+			&l.IPRestrictionsDisabled,
 			&l.Features,
 			&l.Releases,
 		)

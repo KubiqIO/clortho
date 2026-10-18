@@ -347,6 +347,14 @@ Example token payload for `?usage.clients=200&usage.ips=20&nonce=3f8a...`:
 > 4. If the limit is reached, validation fails with "IP address not allowed".
 
 
+
+#### HA deployments and IP restriction overrides
+
+Products and licenses accept `ip_restrictions_disabled` (boolean, default `false`). Set it to `true` on a product for HA deployments on Kubernetes, or on an individual license to exempt it from its product's IP restrictions. A product policy applies to existing and future licenses immediately, including inherited automatic IP settings from a product group.
+
+When either flag is `true`, `/check` skips IP/CIDR allowlists and automatic IP registration. Saved allowlists and automatic IP settings are retained. Expiration, revocation, feature and version checks still apply, and responses remain signed normally. Setting a license flag back to `false` follows the product policy; IP enforcement resumes when both flags are `false`. Omitted fields on updates retain their current values.
+
+
 ### Admin Endpoints
 **Auth**: Bearer Token (JWT) required.
 

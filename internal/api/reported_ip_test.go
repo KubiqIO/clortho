@@ -25,6 +25,7 @@ func TestCheckLicense_ReportedIP(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	mockLicenseStore := new(MockLicenseStore)
 	mockProductStore := new(MockProductStore)
+	mockProductStore.On("GetProduct", mock.Anything, mock.Anything).Return(&models.Product{}, nil).Maybe()
 	mockLogStore := new(MockLogStore)
 
 	mockLogStore.On("CreateLicenseCheckLog", mock.Anything, mock.Anything).Return(nil).Maybe()

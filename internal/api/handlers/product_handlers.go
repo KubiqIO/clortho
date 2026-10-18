@@ -14,33 +14,35 @@ import (
 )
 
 type createProductRequest struct {
-	Name               string             `json:"name" binding:"required"`
-	Description        string             `json:"description"`
-	LicensePrefix      string             `json:"license_prefix"`
-	LicenseSeparator   string             `json:"license_separator"`
-	LicenseCharset     string             `json:"license_charset"`
-	LicenseLength      int                `json:"license_length"`
-	LicenseType        models.LicenseType `json:"license_type"`
-	LicenseDuration    string             `json:"license_duration"`
-	ProductGroupID     string             `json:"product_group_id"`
-	AutoAllowedIP      bool               `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit int                `json:"auto_allowed_ip_limit"`
-	OwnerID            *string            `json:"owner_id"`
+	Name                   string             `json:"name" binding:"required"`
+	Description            string             `json:"description"`
+	LicensePrefix          string             `json:"license_prefix"`
+	LicenseSeparator       string             `json:"license_separator"`
+	LicenseCharset         string             `json:"license_charset"`
+	LicenseLength          int                `json:"license_length"`
+	LicenseType            models.LicenseType `json:"license_type"`
+	LicenseDuration        string             `json:"license_duration"`
+	ProductGroupID         string             `json:"product_group_id"`
+	IPRestrictionsDisabled *bool              `json:"ip_restrictions_disabled"`
+	AutoAllowedIP          bool               `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit     int                `json:"auto_allowed_ip_limit"`
+	OwnerID                *string            `json:"owner_id"`
 }
 
 type updateProductRequest struct {
-	Name               string             `json:"name"`
-	Description        string             `json:"description"`
-	LicensePrefix      string             `json:"license_prefix"`
-	LicenseSeparator   string             `json:"license_separator"`
-	LicenseCharset     string             `json:"license_charset"`
-	LicenseLength      int                `json:"license_length"`
-	LicenseType        models.LicenseType `json:"license_type"`
-	LicenseDuration    string             `json:"license_duration"`
-	ProductGroupID     string             `json:"product_group_id"`
-	AutoAllowedIP      *bool              `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit *int               `json:"auto_allowed_ip_limit"`
-	OwnerID            *string            `json:"owner_id"`
+	Name                   string             `json:"name"`
+	Description            string             `json:"description"`
+	LicensePrefix          string             `json:"license_prefix"`
+	LicenseSeparator       string             `json:"license_separator"`
+	LicenseCharset         string             `json:"license_charset"`
+	LicenseLength          int                `json:"license_length"`
+	LicenseType            models.LicenseType `json:"license_type"`
+	LicenseDuration        string             `json:"license_duration"`
+	ProductGroupID         string             `json:"product_group_id"`
+	IPRestrictionsDisabled *bool              `json:"ip_restrictions_disabled"`
+	AutoAllowedIP          *bool              `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit     *int               `json:"auto_allowed_ip_limit"`
+	OwnerID                *string            `json:"owner_id"`
 }
 
 // ListProductsHandler handles GET /admin/products
@@ -109,6 +111,10 @@ func CreateProductHandler(productStore store.ProductStore, logStore store.LogSto
 			UpdatedAt:          time.Now(),
 		}
 
+		if req.IPRestrictionsDisabled != nil {
+			product.IPRestrictionsDisabled = *req.IPRestrictionsDisabled
+		}
+
 		if req.ProductGroupID != "" {
 			groupID, err := uuid.Parse(req.ProductGroupID)
 			if err != nil {
@@ -167,22 +173,23 @@ func GetProductHandler(productStore store.ProductStore, groupStore store.Product
 			}
 
 			c.JSON(http.StatusOK, gin.H{
-				"id":                    product.ID,
-				"owner_id":              product.OwnerID,
-				"name":                  product.Name,
-				"description":           product.Description,
-				"license_prefix":        product.LicensePrefix,
-				"license_separator":     product.LicenseSeparator,
-				"license_charset":       product.LicenseCharset,
-				"license_length":        product.LicenseLength,
-				"license_type":          product.LicenseType,
-				"license_duration":      product.LicenseDuration,
-				"auto_allowed_ip":       product.AutoAllowedIP,
-				"auto_allowed_ip_limit": product.AutoAllowedIPLimit,
-				"product_group_id":      product.ProductGroupID,
-				"created_at":            product.CreatedAt,
-				"updated_at":            product.UpdatedAt,
-				"group":                 group,
+				"id":                       product.ID,
+				"owner_id":                 product.OwnerID,
+				"name":                     product.Name,
+				"description":              product.Description,
+				"license_prefix":           product.LicensePrefix,
+				"license_separator":        product.LicenseSeparator,
+				"license_charset":          product.LicenseCharset,
+				"license_length":           product.LicenseLength,
+				"license_type":             product.LicenseType,
+				"license_duration":         product.LicenseDuration,
+				"ip_restrictions_disabled": product.IPRestrictionsDisabled,
+				"auto_allowed_ip":          product.AutoAllowedIP,
+				"auto_allowed_ip_limit":    product.AutoAllowedIPLimit,
+				"product_group_id":         product.ProductGroupID,
+				"created_at":               product.CreatedAt,
+				"updated_at":               product.UpdatedAt,
+				"group":                    group,
 			})
 			return
 		}
@@ -231,6 +238,10 @@ func UpdateProductHandler(productStore store.ProductStore, logStore store.LogSto
 		if req.LicenseDuration != "" {
 			product.LicenseDuration = req.LicenseDuration
 		}
+		if req.IPRestrictionsDisabled != nil {
+			product.IPRestrictionsDisabled = *req.IPRestrictionsDisabled
+		}
+
 		if req.ProductGroupID != "" {
 			groupID, err := uuid.Parse(req.ProductGroupID)
 			if err != nil {

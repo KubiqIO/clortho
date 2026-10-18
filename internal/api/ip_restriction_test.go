@@ -176,4 +176,81 @@ func TestIPRestrictions(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("HA product and license overrides persist without clearing IP rules", func(t *testing.T) {
+		requestJSON := func(method, path, body, key string, output interface{}) {
+			req := httptest.NewRequest(method, path, bytes.NewBufferString(body))
+			req.Header.Set("Authorization", authHeader)
+			req.Header.Set("Content-Type", "application/json")
+			if key != "" {
+				req.Header.Set("X-License-Key", key)
+			}
+			w := httptest.NewRecorder()
+			server.Router.ServeHTTP(w, req)
+			require.Contains(t, []int{http.StatusOK, http.StatusCreated}, w.Code, w.Body.String())
+			if output != nil {
+				require.NoError(t, json.Unmarshal(w.Body.Bytes(), output))
+			}
+		}
+		check := func(key string, valid bool) {
+			for _, ip := range []string{"203.0.113.42", "2001:db8::42"} {
+				req := httptest.NewRequest("GET", "/check", nil)
+				req.RemoteAddr = "127.0.0.1:1234"
+				req.Header.Set("X-License-Key", key)
+				req.Header.Set("X-Forwarded-For", ip)
+				w := httptest.NewRecorder()
+				server.Router.ServeHTTP(w, req)
+				require.Equal(t, http.StatusOK, w.Code)
+				var response map[string]interface{}
+				require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+				require.Equal(t, valid, response["valid"], w.Body.String())
+			}
+		}
+		var product models.Product
+		requestJSON("PUT", "/admin/products/"+productID, `{"ip_restrictions_disabled":true}`, "", &product)
+		require.True(t, product.IPRestrictionsDisabled)
+		check(licenseKey, true) // Existing license picks up the product policy.
+		requestJSON("PUT", "/admin/products/"+productID, `{"name":"HA Product"}`, "", &product)
+		require.True(t, product.IPRestrictionsDisabled) // Omitted leaves the policy alone.
+		requestJSON("GET", "/admin/products/"+productID+"?include=group", "", "", &product)
+		require.True(t, product.IPRestrictionsDisabled)
+
+		var created models.License
+		body, err := json.Marshal(map[string]interface{}{
+			"product_id": productID, "type": "perpetual", "ip_restrictions_disabled": true,
+			"allowed_ips": []string{"10.0.0.1"}, "auto_allowed_ip": true, "auto_allowed_ip_limit": 5,
+		})
+		require.NoError(t, err)
+		requestJSON("POST", "/admin/keys", string(body), "", &created)
+		require.True(t, created.IPRestrictionsDisabled)
+		check(created.Key, true)
+		requestJSON("PUT", "/admin/products/"+productID, `{"ip_restrictions_disabled":false}`, "", &product)
+		require.False(t, product.IPRestrictionsDisabled)
+		check(licenseKey, false) // Restores the original IP restrictions.
+		check(created.Key, true) // The individual override survives the product change.
+
+		var license models.License
+		requestJSON("PUT", "/admin/keys", `{"ip_restrictions_disabled":true}`, licenseKey, &license)
+		require.True(t, license.IPRestrictionsDisabled)
+		check(licenseKey, true)
+		requestJSON("GET", "/admin/keys", "", licenseKey, &license)
+		require.True(t, license.IPRestrictionsDisabled)
+		require.Equal(t, []string{"10.0.0.1/32", "2001:db8::1/128"}, license.AllowedIPs)
+		require.Equal(t, []string{"192.168.1.0/24"}, license.AllowedNetworks)
+		requestJSON("PUT", "/admin/keys", `{"ip_restrictions_disabled":false}`, licenseKey, &license)
+		require.False(t, license.IPRestrictionsDisabled)
+		check(licenseKey, false)
+
+		listed, _, err := ls.ListLicenses(ctx, nil, models.PaginationParams{Page: 1, Limit: 100})
+		require.NoError(t, err)
+		for _, item := range listed {
+			if item.Key == created.Key {
+				require.True(t, item.IPRestrictionsDisabled)
+				require.Equal(t, []string{"10.0.0.1/32"}, item.AllowedIPs) // No auto-registration in HA mode.
+			}
+		}
+		products, _, err := ps.ListProducts(ctx, nil, models.PaginationParams{Page: 1, Limit: 100})
+		require.NoError(t, err)
+		require.False(t, products[0].IPRestrictionsDisabled)
+	})
 }

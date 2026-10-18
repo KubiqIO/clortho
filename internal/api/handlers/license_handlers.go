@@ -25,32 +25,34 @@ type generateLicenseRequest struct {
 	Duration  string             `json:"duration"`
 	// Key imports an existing key string instead of generating one, so a licence
 	// migrated from another system keeps the key its holder already has.
-	Key                string   `json:"key"`
-	Prefix             string   `json:"prefix"`
-	Length             int      `json:"length"`
-	FeatureCodes       []string `json:"feature_codes"`
-	ReleaseVersions    []string `json:"release_versions"`
-	AllowedIPs         []string `json:"allowed_ips"`
-	AllowedNetworks    []string `json:"allowed_networks"`
-	OwnerID            *string  `json:"owner_id"`
-	AutoAllowedIP      *bool    `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit *int     `json:"auto_allowed_ip_limit"`
+	Key                    string   `json:"key"`
+	Prefix                 string   `json:"prefix"`
+	Length                 int      `json:"length"`
+	FeatureCodes           []string `json:"feature_codes"`
+	ReleaseVersions        []string `json:"release_versions"`
+	AllowedIPs             []string `json:"allowed_ips"`
+	AllowedNetworks        []string `json:"allowed_networks"`
+	OwnerID                *string  `json:"owner_id"`
+	IPRestrictionsDisabled *bool    `json:"ip_restrictions_disabled"`
+	AutoAllowedIP          *bool    `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit     *int     `json:"auto_allowed_ip_limit"`
 }
 
 type updateLicenseRequest struct {
-	Type               models.LicenseType   `json:"type"`
-	ExpiresAt          *time.Time           `json:"expires_at"`
-	Duration           string               `json:"duration"`
-	Prefix             string               `json:"prefix"`
-	Length             int                  `json:"length"`
-	FeatureCodes       []string             `json:"feature_codes"`
-	ReleaseVersions    []string             `json:"release_versions"`
-	AllowedIPs         []string             `json:"allowed_ips"`
-	AllowedNetworks    []string             `json:"allowed_networks"`
-	Status             models.LicenseStatus `json:"status"`
-	OwnerID            *string              `json:"owner_id"`
-	AutoAllowedIP      *bool                `json:"auto_allowed_ip"`
-	AutoAllowedIPLimit *int                 `json:"auto_allowed_ip_limit"`
+	Type                   models.LicenseType   `json:"type"`
+	ExpiresAt              *time.Time           `json:"expires_at"`
+	Duration               string               `json:"duration"`
+	Prefix                 string               `json:"prefix"`
+	Length                 int                  `json:"length"`
+	FeatureCodes           []string             `json:"feature_codes"`
+	ReleaseVersions        []string             `json:"release_versions"`
+	AllowedIPs             []string             `json:"allowed_ips"`
+	AllowedNetworks        []string             `json:"allowed_networks"`
+	Status                 models.LicenseStatus `json:"status"`
+	OwnerID                *string              `json:"owner_id"`
+	IPRestrictionsDisabled *bool                `json:"ip_restrictions_disabled"`
+	AutoAllowedIP          *bool                `json:"auto_allowed_ip"`
+	AutoAllowedIPLimit     *int                 `json:"auto_allowed_ip_limit"`
 }
 
 // CheckLicenseHandler handles GET /check
@@ -110,8 +112,8 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 		logEntry.LicenseID = &license.ID
 
 		// The address the check judges. An integration validating through
-		// proxies may report where it actually lives as usage.ip= — RackBill
-		// does, because the hop through Cloudflare makes the connection's
+		// proxies may report where it actually lives as usage.ip= because
+		// the hop through Cloudflare makes the connection's
 		// source address an edge node's, and a handful of edge nodes eats an
 		// auto-allow limit meant to count servers. The claim is honored only
 		// on auto-tracking licenses: there the list exists to notice the
@@ -139,8 +141,26 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 			reason = "License has expired"
 		}
 
-		// Check IP restrictions
-		if valid && (len(license.AllowedIPs) > 0 || len(license.AllowedNetworks) > 0 || license.AutoAllowedIP) {
+		// A product-wide HA policy applies immediately to existing licenses.
+		// A license override disables checks independently of its product. Keep
+		// the saved allowlists and auto-tracking settings intact for re-enabling.
+		ipRestrictionsDisabled := license.IPRestrictionsDisabled
+		hasIPRestrictions := len(license.AllowedIPs) > 0 || len(license.AllowedNetworks) > 0 || license.AutoAllowedIP
+		if valid && hasIPRestrictions && !ipRestrictionsDisabled {
+			product, err := productStore.GetProduct(c.Request.Context(), license.ProductID.String())
+			if err != nil || product == nil {
+				slog.Error("Failed to look up product IP policy", "error", err, "product_id", license.ProductID)
+				logEntry.StatusCode = http.StatusServiceUnavailable
+				logEntry.ResponsePayload = map[string]interface{}{"error": "License validation service unavailable"}
+				c.Header("Retry-After", "30")
+				c.JSON(logEntry.StatusCode, logEntry.ResponsePayload)
+				return
+			}
+			ipRestrictionsDisabled = product.IPRestrictionsDisabled
+		}
+
+		// Check IP restrictions only when both the product and license allow it.
+		if valid && hasIPRestrictions && !ipRestrictionsDisabled {
 			clientIP := net.ParseIP(clientIPStr)
 			if clientIP == nil {
 				valid = false
@@ -445,6 +465,10 @@ func GenerateLicenseHandler(licenseStore store.LicenseStore, productStore store.
 			UpdatedAt:          time.Now(),
 		}
 
+		if req.IPRestrictionsDisabled != nil {
+			license.IPRestrictionsDisabled = *req.IPRestrictionsDisabled
+		}
+
 		if len(req.FeatureCodes) > 0 {
 			license.Features = req.FeatureCodes
 		}
@@ -635,6 +659,10 @@ func UpdateLicenseHandler(licenseStore store.LicenseStore, logStore store.LogSto
 
 		if req.Status != "" {
 			existing.Status = req.Status
+		}
+
+		if req.IPRestrictionsDisabled != nil {
+			existing.IPRestrictionsDisabled = *req.IPRestrictionsDisabled
 		}
 
 		if req.AutoAllowedIP != nil {
