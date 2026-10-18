@@ -92,9 +92,18 @@ func CheckLicenseHandler(licenseStore store.LicenseStore, productStore store.Pro
 
 		license, err := licenseStore.GetLicenseByKey(c.Request.Context(), key)
 		if err != nil {
-			logEntry.StatusCode = http.StatusNotFound
-			logEntry.ResponsePayload = map[string]interface{}{"error": "License not found"}
-			c.JSON(http.StatusNotFound, gin.H{"error": "License not found"})
+			if errors.Is(err, store.ErrNotFound) {
+				logEntry.StatusCode = http.StatusNotFound
+				logEntry.ResponsePayload = map[string]interface{}{"error": "License not found"}
+			} else {
+				// Keyva maps 404 to a definitive invalid key. A failed lookup
+				// must remain retryable so clients can use their offline cache.
+				slog.Error("Failed to look up license for validation", "error", err)
+				logEntry.StatusCode = http.StatusServiceUnavailable
+				logEntry.ResponsePayload = map[string]interface{}{"error": "License validation service unavailable"}
+				c.Header("Retry-After", "30")
+			}
+			c.JSON(logEntry.StatusCode, logEntry.ResponsePayload)
 			return
 		}
 		
